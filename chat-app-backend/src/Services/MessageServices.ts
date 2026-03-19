@@ -5,6 +5,7 @@ import MessagesResponseDto from "../Dtos/MessagesDto";
 import MessagesRepository from "../Repositories/MessageRepository";
 import { redisClient as redisClient } from "../Config/redis_connection";
 import Messages from "../Models/Messages";
+import { Media } from "../Models/Rooms";
 
 export default class MessageServices implements MessageServicesInterface {
     private messagesRepository: MessagesRepository;
@@ -17,7 +18,7 @@ export default class MessageServices implements MessageServicesInterface {
 
 
     // ============================================= Send Message to the Receiver and Process in Repository and Save ========================================================================= //
-    async sendMessage(senderId: number, receiverId: number, message: Messages): Promise<MessagesResponseDto> {
+    async sendMessage(senderId: number, receiverId: number, message: Messages, mediaFile: Media[]): Promise<MessagesResponseDto> {
         try {
             if(!Number.isInteger(senderId) || !Number.isInteger(receiverId)) {
                 throw new Error("Sender ID and Receiver ID must be valid numbers.");
@@ -27,7 +28,9 @@ export default class MessageServices implements MessageServicesInterface {
                 throw new Error("Message is required.");
             }
 
-            const sendMessage = await this.messagesRepository.sendMessage(senderId, receiverId, message);
+            
+
+            const sendMessage = await this.messagesRepository.sendMessage(senderId, receiverId, message, mediaFile );
             if(!sendMessage) {
                 throw new Error("Failed to Send Message to Your Friend");
             }
@@ -51,7 +54,7 @@ export default class MessageServices implements MessageServicesInterface {
     }
 
 
-    async sendMultipleMessagesToAllFriends(senderId: number, receiverId: number[], message: Messages): Promise<MessagesResponseDto[]> {
+    async sendMultipleMessagesToAllFriends(senderId: number, receiverId: number[], message: Messages, mediaFile: Media[]): Promise<MessagesResponseDto[]> {
         try {
             if(!Number.isInteger(senderId) || !Array.isArray(receiverId)) {
                 throw new Error("Sender ID and Receiver IDs must be valid.");
@@ -60,7 +63,7 @@ export default class MessageServices implements MessageServicesInterface {
             if(!message || !message.message) {
                 throw new Error("Message is required.");
             }
-            const sendMultipleMessagesToAllFriends = await this.messagesRepository.sendMultipleMessagesToAllFriends(senderId, receiverId, message);
+            const sendMultipleMessagesToAllFriends = await this.messagesRepository.sendMultipleMessagesToAllFriends(senderId, receiverId, message, mediaFile);
             if(!sendMultipleMessagesToAllFriends || sendMultipleMessagesToAllFriends.length === 0) {
                 throw new Error("Failed to Send Message to Your Friends");
             }
@@ -82,7 +85,7 @@ export default class MessageServices implements MessageServicesInterface {
     }
 
 
-    async sendMessageToRoom(roomId: number, senderId: number, message: Messages): Promise<MessagesResponseDto> {
+    async sendMessageToRoom(roomId: number, senderId: number, message: Messages, mediaFile: Media[]): Promise<MessagesResponseDto> {
         try {
             if(!Number.isInteger(roomId) || !Number.isInteger(senderId)) {
                 throw new Error("Room ID and Sender ID must be valid numbers.");
@@ -92,7 +95,7 @@ export default class MessageServices implements MessageServicesInterface {
                 throw new Error("Message is required.");
             }
 
-            const sendMessageToRoom = await this.messagesRepository.sendMessageToRoom(roomId, senderId, message);
+            const sendMessageToRoom = await this.messagesRepository.sendMessageToRoom(roomId, senderId, message, mediaFile);
             if(!sendMessageToRoom) {
                 throw new Error("Failed to Send Message to Room");
             }
@@ -112,20 +115,28 @@ export default class MessageServices implements MessageServicesInterface {
 
 
     // ========================================================================== Get Message By Its ID and  Return this Message to the MessageDto ========================================================================== //
-    async getMessageById(messageId: number): Promise<MessagesResponseDto | null> {
+    async getMessageBySenderIdToReceiverId(id: number,senderId: number, receiverId: number): Promise<MessagesResponseDto | null> {
         try {
-            if(!Number.isInteger(messageId)) {
-                throw new Error(`Message ID must be a valid number. Message ID: ${messageId}`);
+            if(!Number.isInteger(id)) {
+                throw new Error(`Message ID must be a valid number. Message ID: ${id}`);
             }
 
-            const getMessageById = await this.messagesRepository.getMessageById(messageId as number);
+            if(!Number.isInteger(senderId) || !Number.isInteger(receiverId)) {
+                throw new Error(`Sender ID and Receiver ID must be Valid Numbers. Sender ID: ${senderId} And receiverId: ${receiverId}`)
+            }
+
+            const getMessageById = await this.messagesRepository.getMessageBySenderIdToReceiverId(id, senderId, receiverId);
             if(!getMessageById ) {
                 return null;
             }
 
             const messageDto = this.messagesAutoMapper.mapToDto(getMessageById);
-            await this.redisClient.del(`messages:${messageId}`)
-            await this.redisClient.expire(`messages:${messageId}`, 3600);
+            await this.redisClient.del(`messages:${id}`)
+            await this.redisClient.expire(`messages:${id}`, 3600);
+            await this.redisClient.del(`messages:${senderId}`)
+            await this.redisClient.expire(`messages:${senderId}`, 3600);
+            await this.redisClient.del(`messages:${receiverId}`)
+            await this.redisClient.expire(`messages:${receiverId}`, 4500)
 
             return messageDto;
 
@@ -147,7 +158,7 @@ export default class MessageServices implements MessageServicesInterface {
                 return [];
             }
 
-            const messageDtos = getMessagesByReceiverId.map(msg => this.messagesAutoMapper.mapToDto(msg));
+            const messageDtos = getMessagesByReceiverId.map(msg => this.messagesAutoMapper.mapToDto(msg[0]));
             await this.redisClient.del(`messages:${senderId}`)
             await this.redisClient.expire(`messages:${senderId}`, 3600);
             await this.redisClient.del(`messages:${receiverId}`)
@@ -163,18 +174,18 @@ export default class MessageServices implements MessageServicesInterface {
     }
 
 
-    async getMessagesByRoomIdOrGroupChat(roomId: number, senderId: number, offset: number): Promise<MessagesResponseDto[]> {
+    async getMessagesByRoomIdOrGroupChat(roomId: number, senderId: number,receiverIds: number[], offset: number): Promise<MessagesResponseDto[]> {
         try {
             if(!Number.isInteger(roomId) || !Number.isInteger(senderId) || !Number.isInteger(offset)) {
                 throw new Error("Room ID, Sender ID, and Offset must be valid numbers.");
             }
 
-            const getMessagesByRoomIdOrGroupChat = await this.messagesRepository.getMessagesByRoomIdOrGroupChat(roomId, senderId, offset);
+            const getMessagesByRoomIdOrGroupChat = await this.messagesRepository.getMessagesByRoomIdOrGroupChat(roomId, senderId, receiverIds, offset);
             if(!getMessagesByRoomIdOrGroupChat || getMessagesByRoomIdOrGroupChat.length === 0) {
                 return [];
             }
 
-            const messageDtos = getMessagesByRoomIdOrGroupChat.map(msg => this.messagesAutoMapper.mapToDto(msg));
+            const messageDtos = getMessagesByRoomIdOrGroupChat.map(msg => this.messagesAutoMapper.mapToDto(msg[0]));
             await this.redisClient.del(`messages:${roomId}`)
             await this.redisClient.expire(`messages:${roomId}`, 3600);
             await this.redisClient.del(`messages:${senderId}`)
