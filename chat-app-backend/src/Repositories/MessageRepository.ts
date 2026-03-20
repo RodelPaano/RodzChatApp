@@ -24,7 +24,7 @@
             return savedMessage;
         }
 
-
+        // ===================================================== Send Multiple Message to All Friends ==================================================================================================== //
         async sendMultipleMessagesToAllFriends(senderId: number, receiverIds: number[], message: Messages, mediaFile: Media[]): Promise<Messages[]> {
             
             const results: Messages[] = [];
@@ -54,7 +54,7 @@
     }
 
 
-
+        // ======================================================== Send Message To Room ======================================================= //
         async sendMessageToRoom(roomId: number, senderId: number, message: Messages, mediaFile: Media[]): Promise<Messages> {
             
             const query = 'INSERT INTO messages (roomId, senderId, message, media, createdAt) VALUES ($1, $2, $3, $4, $5) RETURNING *';
@@ -73,12 +73,49 @@
 
         }
 
+        // ================================================ Reply to Message From Receiver To Sender ========================================================= //
+        async replyToMessageFromReceiverToSender(senderId: number, receiverId: number, message: Messages, replyAt: Date, mediaFile: Media[]): Promise<Messages[]> {
+            
+            const query = 'INSERT INTO messages (senderId, receiverId, message, media, replyAt, createdAt) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *';
+            const values  = [senderId, receiverId, message.message, message.media, replyAt, message.createdAt || new Date()];
+
+            const result = await this.pg.query(query, values);
+            const savedMessage = result.rows[0];
+
+            // Save Media File to the Postgres Database
+            for (const media of mediaFile) {
+                const mediaQuery = 'INSERT INTO media (messageId, type, url, updatedAt, uploadedBy) VALUES ($1, $2, $3, $4, $5)';
+                const mediaValues = [savedMessage.id, media.type, media.url, media.uploadedAt || new Date(), media.uploadedBy];
+                await this.pg.query(mediaQuery, mediaValues);
+            }
+            return savedMessage;
+
+        }
+
+        // ======================================================== Reply to Message From Room By Sender to Receivers ======================================================== //
+        async replyToMessageFromRoomBySenderToReceivers(roomId: number, senderId: number, message: Messages, replyAt: Date, mediaFile: Media[]): Promise<Messages[]> {
+            
+            const query = 'INSERT INTO messages (roomId, senderId, message, media, replyAt, createdAt) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *';
+            const values  = [roomId, senderId, message.message, message.media, replyAt, message.createdAt || new Date()];
+
+            const result = await this.pg.query(query, values);
+            const savedMessage = result.rows[0];
+
+            // Save Media File to the Postgres Database
+            for (const media of mediaFile) {
+                const mediaQuery = 'INSERT INTO media (messageId, type, url, updatedAt, uploadedBy) VALUES ($1, $2, $3, $4, $5)';
+                const mediaValues = [savedMessage.id, media.type, media.url, media.uploadedAt || new Date(), media.uploadedBy];
+                await this.pg.query(mediaQuery, mediaValues);
+            }
+            return savedMessage;
+        }
+
 
         // ============================================== Get All Messages By List By User Id ============================================= //
-        async getMessageBySenderIdToReceiverId(id: number, senderId: number, receiverId: number, ): Promise<(Messages & { media: Media[] }) | null> {
+        async getMessageBySenderIdToReceiverId(id: number, senderId: number, receiverId: number, readAt: Date): Promise<(Messages & { media: Media[] }) | null> {
             // Get the message
-            const query = 'SELECT * FROM messages WHERE messageId = $1 AND (senderId = $2 AND receiverId = $3 AND uploadedBy = $4) OR (senderId = $3 AND receiverId = $2 AND uploadedBy = $4)';
-            const result = await this.pg.query(query, [id, senderId, receiverId ] );
+            const query = 'SELECT * FROM messages WHERE id = $1 AND (senderId = $2 AND receiverId = $3 AND uploadedBy = $4, readAt = $5) OR (senderId = $3 AND receiverId = $2 AND uploadedBy = $4 readAt = $5)';
+            const result = await this.pg.query(query, [id, senderId, receiverId, readAt ] );
             const message = result.rows[0];
             if (!message) return null;
 
@@ -93,15 +130,16 @@
             };
         }
 
-        async getMessagesByReceiverId(senderId: number, receiverId: number, offset: number): Promise<(Messages[] & { media: Media[] }) [] > {
+        // ========================================================= Get or Retrieve Message By Receiver ID ======================================================= //
+        async getMessagesByReceiverId(senderId: number, receiverId: number, readAt: Date, offset: number): Promise<(Messages[] & { media: Media[] }) [] > {
             
             const query = `
             SELECT * FROM messages 
-            WHERE (senderId = $1 AND receiverId = $2) OR (senderId = $2 AND receiverId = $1) 
+            WHERE receiverId = $1 AND senderId = $2 AND readAt < $3
             ORDER BY createdAt DESC 
             LIMIT 10 OFFSET $3
             `;
-            const values = [senderId, receiverId, offset];
+            const values = [senderId, receiverId, readAt, offset];
             const result = await this.pg.query(query, values);
 
             // Attach media per message
@@ -121,15 +159,17 @@
 
         }
 
-        async getMessagesByRoomIdOrGroupChat(roomId: number, senderId: number, receiverIds: number[], offset: number): Promise<(Messages[] & { media: Media[] }) []> {
+
+        // ================================================== Get or Retrieve Message To Room or Group Chat By Sender ID ====================================================== //
+        async getMessagesByRoomIdOrGroupChat(roomId: number, senderId: number, receiverIds: number[], readAt: Date, offset: number): Promise<(Messages[] & { media: Media[] }) []> {
             
             const query = `
             SELECT * FROM messages 
-            WHERE roomId = $1 AND senderId = $2 AND uploadedBy = $3
+            WHERE roomId = $1 AND senderId = $2 AND uploadedBy = $3 AND readAt < $4
             ORDER BY createdAt DESC 
             LIMIT 10 OFFSET $3
             `;
-            const values = [roomId, senderId, receiverIds, offset];
+            const values = [roomId, senderId, receiverIds, readAt, offset];
             const result = await this.pg.query(query, values);
 
             // Attach media per message
@@ -149,24 +189,37 @@
 
 
         // ============================================== Delete Message By ID ===================================================================//
-        async deleteOrRemoveMessageByRoomId(roomId: number, messageId: number, senderId: number, message: Messages, isHardDelete: boolean, deletedAt: Date): Promise<boolean> {
+        async deleteOrRemoveMessageByRoomId(roomId: number, messageId: number, senderId: number, message: Messages, isHardDelete: boolean, deletedAt: Date, mediaFile: Media[]): Promise<boolean> {
             
             let query: string;
             let values: any[];
-
+            
             if(isHardDelete) {
-                query = 'DELETE FROM messages WHERE roomId = $1 AND senderId = $2 AND messageId = $3 RETURNING *';
-                values = [roomId, senderId, messageId];
+                query = 'DELETE FROM messages WHERE roomId = $1 AND messageId = $2 RETURNING *';
+                values = [roomId, messageId];
             } else {
-                query = 'UPDATE messages SET message = $1, media = $2 , deletedAt = $6 WHERE roomId = $3 AND senderId = $4 AND messageId = $5 RETURNING *';
-                values = [message.message, message.media, roomId, senderId, messageId, deletedAt || new Date()];
+                query = 'UPDATE messages SET deletedAt = $1, message = $2, media = $3 WHERE roomId = $4 AND messageId = $5 RETURNING *';
+                values = [deletedAt || new Date(), message.message, message.media, roomId, messageId];
             }
 
             const result = await this.pg.query(query, values);
-            return (result.rowCount ?? 0) > 0; 
+            const deletedMessage = result.rows[0];
+            if (!deletedMessage) return false;
+
+            // Delete media linked to this message
+            if(isHardDelete) {
+                for (const media of mediaFile) {
+                    const mediaQuery = `DELETE FROM media WHERE messageId = $1 AND type = $2 AND url = $3 AND uploadedBy = $4`;
+                    const mediaValues = [messageId, media.type, media.url, media.uploadedBy];
+                    await this.pg.query(mediaQuery, mediaValues);
+                }
+            }
+            return true;
         }
-    
-        async deleteOrRemoveMessageToUserOrFriendByMessageId(messageId: number, senderId: number, receiverId: number, message: Messages, isHardDelete: boolean, deletedAt: Date): Promise<boolean> {
+
+
+        // ================================================== Delete or Remove Message to Friend By Message ID ========================================================================= //
+        async deleteOrRemoveMessageToUserOrFriendByMessageId(messageId: number, senderId: number, receiverId: number, message: Messages, isHardDelete: boolean, deletedAt: Date, mediaFile: Media[]): Promise<boolean> {
             
             let query: string;
             let values: any[];
@@ -175,31 +228,41 @@
                 query = 'DELETE FROM messages WHERE (senderId = $1 AND receiverId = $2) OR (senderId = $2 AND receiverId = $1) AND messageId = $3 RETURNING *';
                 values = [senderId, receiverId, messageId];
             } else {
-                query = 'UPDATE messages SET deletedAt = $6, message = $1, media = $2 WHERE (senderId = $3 AND receiverId = $4) OR (senderId = $4 AND receiverId = $3) AND messageId = $5 RETURNING *';
-                values = [message.message, message.media, senderId, receiverId, messageId, deletedAt || new Date()];
+                query = 'UPDATE messages SET deletedAt = $1, message = $2, media = $3 WHERE (senderId = $4 AND receiverId = $5) OR (senderId = $4 AND receiverId = $5) AND messageId = $6 RETURNING *';
+                values = [deletedAt || new Date(), message.message, message.media, senderId, receiverId, messageId];
             }
-
             const result = await this.pg.query(query, values);
+            const deletedMessage = result.rows[0];
+            if (!deletedMessage) return false;
 
-            return (result.rowCount ?? 0) > 0;
+            // Delete media linked to this message
+            if(isHardDelete) {
+                for (const media of mediaFile) {
+                    const mediaQuery = `DELETE FROM media WHERE messageId = $1 AND type = $2 AND url = $3 AND uploadedBy = $4`;
+                    const mediaValues = [messageId, media.type, media.url, media.uploadedBy];
+                    await this.pg.query(mediaQuery, mediaValues);
+                }
+            }
+            return true;
         }
 
 
         // ============================================== Update Message By ID =======================================================================//
-        async updateMessageById(id: number, senderId: number, receiverId: number, message: Messages, updatedAt: Date): Promise<Messages | null> {
+        async updateMessageById(id: number, senderId: number, receiverId: number, readAt: Date, message: Messages, updatedAt: Date): Promise<Messages | null> {
             
-            const query = 'UPDATE messages SET message = $1, media = $2, updatedAt = $3 WHERE ((senderId = $4 AND receiverId = $5) OR (senderId = $5 AND receiverId = $4)) AND id = $6 RETURNING *';
-            const values = [message.message, message.media, updatedAt, senderId, receiverId, id];
+            const query = 'UPDATE messages SET message = $1, media = $2, readAt = $3, updatedAt = $4 WHERE id = $5 AND senderId = $6 AND receiverId = $7 RETURNING *';
+            const values = [message.message, message.media, readAt, updatedAt, id, senderId, receiverId];
 
             const result = await this.pg.query(query, values);
             return result.rows[0] || null;
         }
 
         
-        async updateMessageByRoomId(roomId: number, senderId: number, message: Messages, updatedAt: Date): Promise<Messages | null> {
+        // ================================================== Update Message By Room ID =================================================================== //
+        async updateMessageByRoomId( id: number,roomId: number, senderId: number, readAt: Date,message: Messages, updatedAt: Date): Promise<Messages | null> {
             
-            const query = 'UPDATE messages SET message = $1, media = $2, updatedAt = $3 WHERE ((senderId = $4 AND roomId = $5) OR (senderId = $5 AND roomId = $4)) RETURNING *';
-            const values = [message.message, message.media, updatedAt, senderId, roomId];
+            const query = 'UPDATE messages SET message = $1, media = $2, readAt = $3, updatedAt = $4 WHERE roomId = $5 AND id = $6 RETURNING *';
+            const values = [message.message, message.media, readAt, updatedAt, roomId, id];
 
             const result = await this.pg.query(query, values);
 

@@ -535,36 +535,6 @@ export default class UsersServices implements UsersServiceInterface {
     }
 
 
-    // ==================================================================== Add Friend User Account Services and Process and Check the Business Logic =========================================================================  //
-    async addFriendUserAccountById(id: number): Promise<UsersResponseDto | null> {
-        try {
-
-            validateVerifyAccountInput(id.toString(), "");
-            validateEmail("");
-            validatePasswordInput("");
-
-            const user = await this.usersRepository.getUserAccountById(id);
-            if(!user || user.isDeleted) {
-                throw new Error("User Not Found or User Account is Deleted");
-            }
-            if(user.isBlocked) {
-                throw new Error("User Account is Blocked");
-            }
-
-            const dtoUser = this.mapper.mapToDto(user);
-
-            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(user), {
-                EX: 3600 // Set the expiration time to 1 hour
-            });
-
-            return dtoUser;
-        } catch (error) {
-            console.error("Error Add Friend User Account:", error);
-            throw error;
-
-        }
-    }
-
 
     // ==================================================================== Delete User Account Services and Process and Check the Business Logic =========================================================================  // 
     async deleteUserAccountById(id: number): Promise<UsersResponseDto | null> {

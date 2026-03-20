@@ -84,8 +84,6 @@ export interface UsersServiceInterface {
     // Update User Last Active Status and Tract the Last Login TimeStamps
     updateUserLastActiveStatus(id: number, lastLogin: Date) : Promise<boolean>;
 
-    // Add Friend User Services Dto Data
-    addFriendUserAccountById(id: number) : Promise<UsersResponseDto | null>; 
 
     // Delete User Services Dto Data
     deleteUserAccountById(id: number) : Promise<UsersResponseDto | null>;
