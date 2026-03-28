@@ -5,7 +5,7 @@ import UsersChatRooms, { RoomRole } from "../Models/UsersChatRooms";
 import UserRoomRole  from "../Dtos/UserChatRoomsDto";
 
 
-export default class ChatRoomAutoMapper implements ChatRoomsAutoMapperInterface {
+export default class ChatRoomMapper implements ChatRoomsAutoMapperInterface {
 
 mapChatRoomToChatRoomModel(chatRoom: ChatRoomsResponseDto): ChatRooms {
  return new ChatRooms(

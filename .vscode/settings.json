@@ -1,5 +1,7 @@
 {
     "cSpell.words": [
         "Dtos"
-    ]
+    ],
+    "geminicodeassist.agentDebugMode": true,
+    "geminicodeassist.chat.changeView": "Inline suggestions"
 }

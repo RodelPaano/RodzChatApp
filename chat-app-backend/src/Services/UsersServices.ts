@@ -25,7 +25,7 @@ export default class UsersServices implements UsersServiceInterface {
 
     // ================================================= Create User Account and Login User Account Services and Process and Check the Business Logic =========================================================================  //
 
-    async createUserAccount(user: Users): Promise<UsersResponseDto | null> {
+    public async createUserAccount(user: Users): Promise<UsersResponseDto | null> {
         try {
 
             const input = validateCreateUserInput({
@@ -90,7 +90,7 @@ export default class UsersServices implements UsersServiceInterface {
     }
 
 
-    async loginUserAccount(email: string, password: string): Promise<UsersResponseDto | null> {
+    public async loginUserAccount(email: string, password: string): Promise<UsersResponseDto | null> {
         try {
 
             const { email: loginEmail, password: loginPassword } = loginInput(email, password);
@@ -131,7 +131,7 @@ export default class UsersServices implements UsersServiceInterface {
 
     // ======================================================= Update User Account and Save on the User Repository and Process and Check the Business Logic =========================================================================  //
 
-    async updateUserDetailsAccountById(id: number, user: Users): Promise<UsersResponseDto | null> {
+    public async updateUserDetailsAccountById(id: number, user: Users): Promise<UsersResponseDto | null> {
         try {
             const updateUserInputField = updateUserInput(user);
             if(!updateUserInputField || Object.keys(updateUserInputField).length === 0) {
@@ -163,7 +163,7 @@ export default class UsersServices implements UsersServiceInterface {
     }
 
 
-    async updateUserRole(id: number, role: UserRole): Promise<UsersResponseDto | null> {
+    public async updateUserRole(id: number, role: UserRole): Promise<UsersResponseDto | null> {
         try {
 
             const input = UpdateUserRole(id, role);
@@ -193,7 +193,7 @@ export default class UsersServices implements UsersServiceInterface {
     }
 
 
-    async updateUserEmailAndPasswordById(id: number, email: string, password: string): Promise<UsersResponseDto | null> {
+    public async updateUserEmailAndPasswordById(id: number, email: string, password: string): Promise<UsersResponseDto | null> {
         try {
 
             const input = updateUserEmailAndPasswordInput(id, email, password);
@@ -232,7 +232,7 @@ export default class UsersServices implements UsersServiceInterface {
 
 
     // ====================================================================== Get User Account Services and Process and Check the Business Logic =========================================================================  //
-    async getUserAccountById(id: number): Promise<UsersResponseDto | null> {
+    public async getUserAccountById(id: number): Promise<UsersResponseDto | null> {
         try {
 
             const user = await this.usersRepository.getUserAccountById(id);
@@ -256,7 +256,7 @@ export default class UsersServices implements UsersServiceInterface {
         }
     }
 
-    async getUserAccountByEmail(email: string): Promise<UsersResponseDto | null> {
+    public async getUserAccountByEmail(email: string): Promise<UsersResponseDto | null> {
         try {
 
             const user = await this.usersRepository.getUserAccountByEmail(email);
@@ -282,7 +282,7 @@ export default class UsersServices implements UsersServiceInterface {
     }
 
 
-    async findAllUsers(): Promise<UsersResponseDto[] | null> {
+    public async findAllUsers(): Promise<UsersResponseDto[] | null> {
         try {
 
             const users = await this.usersRepository.findAllUsers();
@@ -305,7 +305,7 @@ export default class UsersServices implements UsersServiceInterface {
 
 
     // ============================================================================= Find Pagination User Account Services and Process and Check the Business Logic =========================================================================  //
-    async findAndPaginated(page: number, limit: number): Promise<UsersResponseDto[] | null> {
+    public async findAndPaginated(page: number, limit: number): Promise<UsersResponseDto[] | null> {
         try {
 
             const users = await this.usersRepository.findAndPaginated(page, limit);
@@ -330,7 +330,7 @@ export default class UsersServices implements UsersServiceInterface {
 
 
     // ======================================================================== Search User Account Services and Process and Check the Business Logic =========================================================================  //
-    async searchUserAccount(search: string): Promise<UsersResponseDto[] | null> {
+    public async searchUserAccount(search: string): Promise<UsersResponseDto[] | null> {
         try {
 
             let safeQuery = validateSearchInput(search);
@@ -357,7 +357,7 @@ export default class UsersServices implements UsersServiceInterface {
 
 
     // ===============================================================  Verify User Account Services and Process and Check the Business Logic =========================================================================  //
-    async verifyUserAccountById(id: number): Promise<UsersResponseDto | null> {
+    public async verifyUserAccountById(id: number): Promise<UsersResponseDto | null> {
         try {
 
             validateVerifyAccountInput(id.toString(), "");
@@ -393,7 +393,7 @@ export default class UsersServices implements UsersServiceInterface {
 
 
     // ========================================================================= Block User Account Services and Process and Check the Business Logic =========================================================================  //
-    async blockUserAccountById(id: number): Promise<UsersResponseDto | null> {
+    public async blockUserAccountById(id: number): Promise<UsersResponseDto | null> {
         try {
 
             validateVerifyAccountInput(id.toString(), "");
@@ -428,7 +428,7 @@ export default class UsersServices implements UsersServiceInterface {
     }
 
 
-    async setBlockedUserAccountById(id: number, isBlocked: boolean): Promise<UsersResponseDto | null> {
+    public async setBlockedUserAccountById(id: number, isBlocked: boolean): Promise<UsersResponseDto | null> {
         try {
             
             const user = await this.usersRepository.setBlockedUserAccountById(id, isBlocked);
@@ -458,7 +458,7 @@ export default class UsersServices implements UsersServiceInterface {
 
 
     // ===================================================================== Get User Is Online Services and Process and Check the Business Logic ========================================================================= //
-    async getUserIsOnline(id: number, isOnline: boolean, isBlocked: boolean, isDeleted: boolean, lastLogin: Date): Promise<boolean> {
+    public async getUserIsOnline(id: number, isOnline: boolean, isBlocked: boolean, isDeleted: boolean, lastLogin: Date): Promise<boolean> {
         try {
 
             const isUserOnline = await this.usersRepository.getUserIsOnline(id, isOnline, isBlocked, isDeleted, lastLogin);
@@ -492,7 +492,7 @@ export default class UsersServices implements UsersServiceInterface {
     }
 
 
-    async updateUserIfLogoutOrOffline(id: number, isOnline: boolean): Promise<boolean> {
+    public async updateUserIfLogoutOrOffline(id: number, isOnline: boolean): Promise<boolean> {
         try {
 
             const isUpdated = await this.usersRepository.updateUserIfLogoutOrOffline(id, isOnline);
@@ -514,7 +514,7 @@ export default class UsersServices implements UsersServiceInterface {
 
 
     // ===================================================================== Update User Last Active Status Services and Process and Check the Business Logic ================================================================================== //
-    async updateUserLastActiveStatus(id: number, lastLogin: Date): Promise<boolean> {
+    public async updateUserLastActiveStatus(id: number, lastLogin: Date): Promise<boolean> {
         try {
 
             const isUpdatedStatus = await this.usersRepository.updateUserLastActiveStatus(id, lastLogin);
@@ -537,7 +537,7 @@ export default class UsersServices implements UsersServiceInterface {
 
 
     // ==================================================================== Delete User Account Services and Process and Check the Business Logic =========================================================================  // 
-    async deleteUserAccountById(id: number): Promise<UsersResponseDto | null> {
+    public async deleteUserAccountById(id: number): Promise<UsersResponseDto | null> {
         try {
             const deletedUser = await this.usersRepository.deleteUserAccountById(id);
             if(!deletedUser || deletedUser.isDeleted) {

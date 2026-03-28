@@ -18,7 +18,7 @@ export default class MessageServices implements MessageServicesInterface {
 
 
     // ============================================= Send Message to the Receiver and Process in Repository and Save ========================================================================= //
-    async sendMessage(senderId: number, receiverId: number, message: Messages, mediaFile: Media[]): Promise<MessagesResponseDto> {
+    public async sendMessage(senderId: number, receiverId: number, message: Messages, mediaFile: Media[]): Promise<MessagesResponseDto> {
         try {
             if(!Number.isInteger(senderId) || !Number.isInteger(receiverId)) {
                 throw new Error("Sender ID and Receiver ID must be valid numbers.");
@@ -52,7 +52,7 @@ export default class MessageServices implements MessageServicesInterface {
     }
 
 
-    async sendMultipleMessagesToAllFriends(senderId: number, receiverId: number[], message: Messages, mediaFile: Media[]): Promise<MessagesResponseDto[]> {
+    public async sendMultipleMessagesToAllFriends(senderId: number, receiverId: number[], message: Messages, mediaFile: Media[]): Promise<MessagesResponseDto[]> {
         try {
             if(!Number.isInteger(senderId) || !Array.isArray(receiverId)) {
                 throw new Error("Sender ID and Receiver IDs must be valid.");
@@ -83,7 +83,7 @@ export default class MessageServices implements MessageServicesInterface {
     }
 
 
-    async sendMessageToRoom(roomId: number, senderId: number, message: Messages, mediaFile: Media[]): Promise<MessagesResponseDto> {
+    public async sendMessageToRoom(roomId: number, senderId: number, message: Messages, mediaFile: Media[]): Promise<MessagesResponseDto> {
         try {
             if(!Number.isInteger(roomId) || !Number.isInteger(senderId)) {
                 throw new Error("Room ID and Sender ID must be valid numbers.");
@@ -112,7 +112,7 @@ export default class MessageServices implements MessageServicesInterface {
     }
 
     // =============================================== Reply to Message have Sender ID From Receiver Id ========================================================================== //
-    async replyToMessageFromReceiverToSender(senderId: number, receiverId: number, message: Messages, replyAt: Date, mediaFile: Media[]): Promise<MessagesResponseDto[]> {
+    public async replyToMessageFromReceiverToSender(senderId: number, receiverId: number, message: Messages, replyAt: Date, mediaFile: Media[]): Promise<MessagesResponseDto[]> {
         try {
             if(!Number.isInteger(senderId) || !Number.isInteger(receiverId)) {
                 throw new Error("Sender ID and Receiver ID must be valid numbers.");
@@ -147,7 +147,7 @@ export default class MessageServices implements MessageServicesInterface {
     }
 
     // ================================================== Reply to Message From Room By Sender to Receiver ========================================================================== //
-    async replyToMessageFromRoomBySenderToReceivers(roomId: number, senderId: number, message: Messages, replyAt: Date, mediaFile: Media[]): Promise<MessagesResponseDto[]> {
+    public async replyToMessageFromRoomBySenderToReceivers(roomId: number, senderId: number, message: Messages, replyAt: Date, mediaFile: Media[]): Promise<MessagesResponseDto[]> {
         try {
             if(!Number.isInteger(roomId) || !Number.isInteger(senderId)) {
                 throw new Error("Room ID and Sender ID must be valid numbers.");
@@ -183,7 +183,7 @@ export default class MessageServices implements MessageServicesInterface {
 
 
     // ========================================================================== Get Message By Its ID and  Return this Message to the MessageDto ========================================================================== //
-    async getMessageBySenderIdToReceiverId(id: number,senderId: number, receiverId: number, readAt: Date): Promise<MessagesResponseDto | null> {
+    public async getMessageBySenderIdToReceiverId(id: number,senderId: number, receiverId: number, readAt: Date): Promise<MessagesResponseDto | null> {
         try {
             if(!Number.isInteger(id)) {
                 throw new Error(`Message ID must be a valid number. Message ID: ${id}`);
@@ -217,7 +217,7 @@ export default class MessageServices implements MessageServicesInterface {
     }
 
 
-    async getMessagesByReceiverId(senderId: number, receiverId: number, readAt: Date, offset: number): Promise<MessagesResponseDto[]> {
+    public async getMessagesByReceiverId(senderId: number, receiverId: number, readAt: Date, offset: number): Promise<MessagesResponseDto[]> {
         try {
             if(!Number.isInteger(senderId) || !Number.isInteger(receiverId) || !Number.isInteger(offset)) {
                 throw new Error("Sender ID, Receiver ID, and Offset must be valid numbers.");
@@ -250,7 +250,7 @@ export default class MessageServices implements MessageServicesInterface {
     }
 
 
-    async getMessagesByRoomIdOrGroupChat(roomId: number, senderId: number,receiverIds: number[], readAt: Date, offset: number): Promise<MessagesResponseDto[]> {
+    public async getMessagesByRoomIdOrGroupChat(roomId: number, senderId: number,receiverIds: number[], readAt: Date, offset: number): Promise<MessagesResponseDto[]> {
         try {
             if(!Number.isInteger(roomId) || !Number.isInteger(senderId) || !Number.isInteger(offset)) {
                 throw new Error("Room ID, Sender ID, and Offset must be valid numbers.");
@@ -286,7 +286,7 @@ export default class MessageServices implements MessageServicesInterface {
 
 
     // ================================================================== Delete Message By Its ID ========================================================================== //
-    async deleteOrRemoveMessageToUserOrFriendByMessageId(messageId: number, senderId: number, receiverId: number, message: Messages, isHardDelete: boolean, deletedAt: Date, mediaFile: Media[]): Promise<boolean> {
+    public async deleteOrRemoveMessageToUserOrFriendByMessageId(messageId: number, senderId: number, receiverId: number, message: Messages, isHardDelete: boolean, deletedAt: Date, mediaFile: Media[]): Promise<boolean> {
         try {
             if(!Number.isInteger(messageId) || !Number.isInteger(senderId) || !Number.isInteger(receiverId)) {
                 throw new Error("Message ID, Sender ID, and Receiver ID must be valid numbers.");
@@ -318,7 +318,7 @@ export default class MessageServices implements MessageServicesInterface {
         }
     }
 
-    async deleteOrRemoveMessageByRoomId(roomId: number, messageId: number, senderId: number, message: Messages, isHardDelete: boolean, deletedAt: Date, mediaFile: Media[]): Promise<boolean> {
+    public async deleteOrRemoveMessageByRoomId(roomId: number, messageId: number, senderId: number, message: Messages, isHardDelete: boolean, deletedAt: Date, mediaFile: Media[]): Promise<boolean> {
         try {
             if(!Number.isInteger(roomId) || !Number.isInteger(senderId)) {
                 throw new Error("Room ID and Sender ID must be valid numbers.");
@@ -355,7 +355,7 @@ export default class MessageServices implements MessageServicesInterface {
 
 
     // =========================================================================== Update Message By Its ID ========================================================================== //
-    async updateMessageById(id: number, senderId: number, readAt: Date, receiverId: number, message: Messages, updatedAt: Date): Promise<MessagesResponseDto | null> {
+    public async updateMessageById(id: number, senderId: number, readAt: Date, receiverId: number, message: Messages, updatedAt: Date): Promise<MessagesResponseDto | null> {
         try {
             if(!Number.isInteger(id) || !Number.isInteger(senderId) || !Number.isInteger(receiverId)) {
                 throw new Error("Message ID, Sender ID, and Receiver ID must be valid numbers.");
@@ -392,7 +392,7 @@ export default class MessageServices implements MessageServicesInterface {
     }
 
 
-    async updateMessageByRoomId(id: number,roomId: number, senderId: number, readAt: Date, message: Messages): Promise<MessagesResponseDto | null> {
+    public async updateMessageByRoomId(id: number,roomId: number, senderId: number, readAt: Date, message: Messages): Promise<MessagesResponseDto | null> {
         try {
             if(!Number.isInteger(roomId) || !Number.isInteger(senderId)) {
                 throw new Error("Room ID and Sender ID must be valid numbers.");

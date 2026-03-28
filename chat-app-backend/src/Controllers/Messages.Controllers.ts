@@ -335,7 +335,7 @@ export default class MessagesControllers {
             const updateMessageById = req.body;
 
             const updateMessageByIdResponse = await this.messageServices.updateMessageById(
-                updateMessageById.id,
+                id,
                 updateMessageById.senderId, 
                 updateMessageById.readAt, 
                 updateMessageById.receivedId, 

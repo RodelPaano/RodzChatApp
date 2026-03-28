@@ -17,7 +17,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================ And and Remove Friend ============================
-    async addFriend(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
+    public async addFriend(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
         try {
             (FriendShipStatus.Pending);
             if(!canAddFriend(status)){
@@ -40,7 +40,7 @@ export default class FriendsServices implements FriendsServicesInterface {
         }
     }
 
-    async removeFriend(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
+    public async removeFriend(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
         try {
             if(!Number.isInteger(userId) || !Number.isInteger(friendId)){
                 throw new Error("User ID and Friend ID must be valid numbers.");
@@ -66,7 +66,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================ Get or Read Friend Request By List By User ID ======================================================= //
-    async getFriendsListByUserId(requesterId: number, status: FriendShipStatus): Promise<FriendsResponseDto[] | null> {
+    public async getFriendsListByUserId(requesterId: number, status: FriendShipStatus): Promise<FriendsResponseDto[] | null> {
         try {
             if(!Number.isInteger(requesterId)) {
                 throw new Error("User ID must be a valid number.");
@@ -93,7 +93,7 @@ export default class FriendsServices implements FriendsServicesInterface {
         }
     }
 
-    async getFriendshipStatus(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
+    public async getFriendshipStatus(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
         try {
             if(!Number.isInteger(userId) || !Number.isInteger(friendId)){
                 throw new Error("User ID and Friend ID must be valid numbers.");
@@ -117,7 +117,7 @@ export default class FriendsServices implements FriendsServicesInterface {
         }
     }
 
-    async getFriendshipStatusByList(userId: number, friendId: number, statusList: FriendShipStatus[]): Promise<FriendsResponseDto[] | null> {
+    public async getFriendshipStatusByList(userId: number, friendId: number, statusList: FriendShipStatus[]): Promise<FriendsResponseDto[] | null> {
         try {
             if(!Number.isInteger(userId) || !Number.isInteger(friendId)){
                 throw new Error("User ID and Friend ID must be valid numbers.");
@@ -148,7 +148,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================================================= Accept and Reject Friend Request ============================================================= //
-    async responseToFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
+    public async responseToFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
         try {
             if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("Requester ID and Addressee ID must be valid numbers.");
@@ -172,7 +172,7 @@ export default class FriendsServices implements FriendsServicesInterface {
         }
     }
 
-    async refuseFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
+    public async refuseFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
         try {
             if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("Requester ID and Addressee ID must be valid numbers.");
@@ -196,7 +196,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================= Get Friends Request By User ID and Status ============================= //
-    async getFriendRequestsByRequesterIdToAddresseeId(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto[] | null> {
+    public async getFriendRequestsByRequesterIdToAddresseeId(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto[] | null> {
         try {
             if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("Requester ID and Addressee ID must be valid numbers.");
@@ -221,7 +221,7 @@ export default class FriendsServices implements FriendsServicesInterface {
     }
 
 
-    async getFriendRequestsByRequesterIdAndStatus(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto[] | null> {
+    public async getFriendRequestsByRequesterIdAndStatus(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto[] | null> {
         try {
             if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("Requester ID and Addressee ID must be valid numbers.");
@@ -245,7 +245,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================ Update Friend Request Status ============================= //
-    async updateFriendRequestStatus(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
+    public async updateFriendRequestStatus(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
         try {
             if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("Requester ID and Addressee ID must be valid numbers.");
@@ -273,7 +273,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================ Delete Friend Request By requesterId ============================= //
-    async deleteFriendRequestById(requesterId: number, addresseeId: number): Promise<FriendsResponseDto | null> {
+    public async deleteFriendRequestById(requesterId: number, addresseeId: number): Promise<FriendsResponseDto | null> {
         try {
             if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("Requester ID and Addressee ID must be valid numbers.");
@@ -294,7 +294,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================ Search Friends By User ID and Search Term ============================= //
-    async searchFriendsByUserIdAndSearchTerm(userId: number, searchTerm: string): Promise<FriendsResponseDto[] | null> {
+    public async searchFriendsByUserIdAndSearchTerm(userId: number, searchTerm: string): Promise<FriendsResponseDto[] | null> {
         try {
             if(!Number.isInteger(userId)) {
                 throw new Error(`User ID must be a valid number. User ID: ${userId}`);
@@ -317,7 +317,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ================================================================= Block and Unblocked Friend By friendId ================================================================= //
-    async blockFriendById(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
+    public async blockFriendById(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
         try {
             if(!Number.isInteger(userId) || !Number.isInteger(friendId)){
                 throw new Error("User ID and Friend ID must be valid numbers.");
@@ -336,7 +336,7 @@ export default class FriendsServices implements FriendsServicesInterface {
         }
     }
 
-    async unblockFriendById(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
+    public async unblockFriendById(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
         try {
             if(!Number.isInteger(userId) || !Number.isInteger(friendId)) {
                 throw new Error("User ID and Friend ID must be valid numbers.");
@@ -358,7 +358,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================================================= Count and Metrics of Friends ================================================================//
-    async countFriendsByUserId(userId: number): Promise<number> {
+    public async countFriendsByUserId(userId: number): Promise<number> {
         try {
             if(!Number.isInteger(userId)) {
                 throw new Error(`User ID must be a valid number. User ID: ${userId}`);
@@ -376,7 +376,7 @@ export default class FriendsServices implements FriendsServicesInterface {
         }
     }
 
-    async countPendingFriendRequestsByUserId(userId: number): Promise<number> {
+    public async countPendingFriendRequestsByUserId(userId: number): Promise<number> {
         try {
             if(!Number.isInteger(userId)) {
                 throw new Error(`User ID must be a valid number. User ID: ${userId}`);
@@ -397,7 +397,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================================================== Get Mutual Friends Between Two Users ============================================================== //
-    async getMutualFriendsBetweenUsers(userId: number, otherUserId: number): Promise<FriendsResponseDto[] | null> {
+    public async getMutualFriendsBetweenUsers(userId: number, otherUserId: number): Promise<FriendsResponseDto[] | null> {
         try {
             if(!Number.isInteger(userId) || !Number.isInteger(otherUserId)) {
                 throw new Error("User ID and Other User ID must be valid numbers.");
@@ -420,7 +420,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ====================================================================== Get Suggestion Friends By User id ====================================================================== //
-    async getSuggestedFriendsByUserId(requesterId: number, otherUserId: number): Promise<FriendsResponseDto[] | null> {
+    public async getSuggestedFriendsByUserId(requesterId: number, otherUserId: number): Promise<FriendsResponseDto[] | null> {
         try {
             if(!Number.isInteger(requesterId) || !Number.isInteger(otherUserId)) {
                 throw new Error("Requester ID and Other User ID must be valid numbers.");
@@ -443,7 +443,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ======================================================================== Get Friend History By User Id ======================================================================= //
-    async getFriendshipHistoryByUserId(userId: number, friendId: number): Promise<FriendsResponseDto[] | null> {
+    public async getFriendshipHistoryByUserId(userId: number, friendId: number): Promise<FriendsResponseDto[] | null> {
         try {
             if(!Number.isInteger(userId) || !Number.isInteger(friendId)) {
                 throw new Error("User ID and Friend ID must be valid numbers.");

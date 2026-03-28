@@ -3,64 +3,58 @@ import ChatRooms, { Media } from "../Models/Rooms";
 import Users from "../Models/User";
 import UsersChatRooms from "../Models/UsersChatRooms";
 
+export interface ChatRoomsCreation {
+    name: string;
+    description: string;
+    icon?: string;
+    ownerId?: number;
+}
+
 export interface ChatRoomsAutoMapperInterface {
     mapChatRoomToChatRoomModel(chatRoom: ChatRoomsResponseDto): ChatRooms
     mapModelToDto(chatRoom: ChatRooms): ChatRoomsResponseDto
 }
 
 export interface ChatRoomsRepositoryInterface {
-    // Create
-    create(chatRoom: ChatRooms): Promise<ChatRooms>;
+    // ==================== Create Chat Room ================================ //
+    createChatRoom(name: string, description: string, icon: string, ownerId: number, createdAt: Date): Promise<ChatRooms>;
 
-    // Membership
-    addUserToChatRoom(chatRoomId: number, userId: number): Promise<boolean>;
-    removeUserFromChatRoom(chatRoomId: number, userId: number): Promise<boolean>;
+    // ==================== Update Name and Icon of Chat Room  where Id Belong to the ownerId ================================ //
+    updateNameAndIconByIdWhereBelongToOwnerId(id: number, name: string, icon: string, ownerId: number, updatedAt: Date) : Promise<ChatRooms | null>;
+    updateDescriptionByIdWhereBelongToOwnerId(id: number, description: string, ownerId: number, updatedAt: Date) : Promise<ChatRooms | null>;
 
-    // Get Membership
-    getUsersInChatRoom(chatRoomId: number): Promise<Users[]>;
+    // ==================== Delete Chat Room But Only can Delete this Chat Room where Id Belong to the ownerId ================================ //
+    deleteChatRoomByIdWhereBelongToOwnerId(id: number, ownerId: number, deletedAt: Date) : Promise<ChatRooms | null>;
 
-    // Read
-    findAll(): Promise<ChatRooms[]>;
-    findById(id: number): Promise<ChatRooms | null>;
+    // ==================== Get Chat Rooms By ID ====================================== //
+    findChatRoomById(id: number): Promise<ChatRooms | null>;
 
-    // Media Handler 
-    addMediaToChatRoom(id: number, media: Media): Promise<boolean>;
-    removeMediaFromChatRoom(roomId: number, mediaId: number): Promise<boolean>;
-    getMediaFromChatRoom(roomId: number): Promise<Media[]>;
-    downloadMediaFromChatRoom(id: number, mediaId:number): Promise<Media | null>;
+    // ============================ Retrieved All Chat Rooms ================================= //
+    findAllChatRooms(): Promise<ChatRooms[]>;
 
-    // Update  
-    update(id: number, chatRoom: Partial<ChatRooms>): Promise<ChatRooms | null>;
-
-    // Soft Delete 
-    delete(id: number): Promise<boolean>;
-
-    // Hard Delete 
-    hardDelete(id: number) : Promise<boolean>;   
+    // ============================ Get Chat Rooms By Owner ID ================================= //
+    findChatRoomsByOwnerId(ownerId: number): Promise<ChatRooms[]>;
+    
 }
 
 export interface ChatRoomsServicesInterface {
-    // Create
-    create(chatRoom: ChatRooms): Promise<ChatRoomsResponseDto>;
+    // ==================== Create Chat Room ================================ //
+    createChatRoom(chatRoom: ChatRoomsCreation) : Promise<ChatRoomsResponseDto | null>;
 
-    // Membership
-    addUserToChatRoom(chatRoomId: number, userId: number): Promise<boolean>;
-    removeUserFromChatRoom(chatRoomId: number, userId: number): Promise<boolean>;
-    getUsersInChatRoom(chatRoomId: number): Promise<Users[]>;
+    // ===================== Update Name and Icon of Chat Room where Id Belong to the ownerId ================================ //
+    updateNameAndIconByIdWhereBelongToOwnerId(id: number, name: string, icon: string, ownerId: number, updatedAt: Date) : Promise<ChatRoomsResponseDto | null>;
+    updateDescriptionByIdWhereBelongToOwnerId(id: number, description: string, ownerId: number, updatedAt: Date) : Promise<ChatRoomsResponseDto | null>;
 
-    // Read
-    findAll(): Promise<ChatRoomsResponseDto[]>;
-    findById(id: number): Promise<ChatRoomsResponseDto | null>;
+    // ===================== Delete Chat Room But Only can Delete this Chat Room where Id Belong to the ownerId ================================ //
+    deleteChatRoomByIdWhereBelongToOwnerId(id: number, ownerId: number, deletedAt: Date) : Promise<ChatRoomsResponseDto | null>;
 
-    // Media Handler 
-    addMediaToChatRoom(id: number, media: Media): Promise<boolean>;
-    removeMediaFromChatRoom(id: number, media: Media): Promise<boolean>;
-    getMediaFromChatRoom(id: number): Promise<Media[]>;
-    downloadMediaFromChatRoom(id: number, MediaId:number): Promise<Buffer>;
+    // ==================== Get Chat Rooms By ID ====================================== //
+    findChatRoomById(id: number): Promise<ChatRoomsResponseDto | null>;
 
-    // Update
-    update(id: number, chatRoom: Partial<ChatRooms>): Promise<ChatRoomsResponseDto | null>;
+    // ============================ Retrieved All Chat Rooms ================================= //
+    findAllChatRooms(): Promise<ChatRoomsResponseDto[]>;
 
-    // Delete
-    delete(id: number): Promise<boolean>;
+    // ============================ Get Chat Rooms By Owner ID ================================= //
+    findChatRoomsByOwnerId(ownerId: number): Promise<ChatRoomsResponseDto[]>
+    
 }
