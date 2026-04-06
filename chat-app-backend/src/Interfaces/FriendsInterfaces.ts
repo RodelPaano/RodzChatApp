@@ -11,28 +11,29 @@ export interface FriendsAutoMapperInterface {
 }
 
 export interface FriendsRepositoryInterface {
-    // Add and Remove Friend
-    addFriend(requesterId: number, addresseeId: number) : Promise<Friends | null>;
-    removeFriendRequest(requesterId: number, addresseeId: number) : Promise<Friends | null>;
+    // Add Friend
+    addFriend(requesterId: number, addresseeId: number, createdAt: Date ) : Promise<Friends | null>;
+
+    // Hard Remove Friend Request By Requester ID and Addressee ID
+    HardDeleteFriendRequest(requesterId: number, addresseeId: number) : Promise<Friends | null>;
+
+    // Soft Delete Friend Request By Requester ID and Addressee ID
+    softDeleteFriendRequest(requesterId: number, addresseeId: number, deletedAt: Date) : Promise<Friends | null>;
 
     // Accept and Reject Friend Request
-    respondToFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus) : Promise<Friends | null>;
-    refuseFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus) : Promise<Friends | null>;
+    respondOrAcceptFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus, friendAt: Date) : Promise<Friends | null>;
 
     // Get Friends List By User id
-    getFriendsListByRequesterId(requesterId: number, status: FriendShipStatus) : Promise<Friends[] | null>;
+    getFriendsListByRequesterId(requesterId: number, status: FriendShipStatus, friendAt: Date) : Promise<Friends[] | null>;
     getFriendshipStatus(requesterId: number, addresseeId: number) : Promise<Friends | null>;
-    getFriendshipStatusByList(requesterId: number, addresseeId: number, statusList: FriendShipStatus[]) : Promise<Friends[] | null>;
+    getFriendshipStatusByList(requesterId: number, addresseeId: number, statusList: FriendShipStatus[], friendAt: Date) : Promise<Friends[] | null>;
     
     // Get Friend Requests By User Id
-    getFriendRequestsByRequesterIdToAddresseeId(requesterId: number, addresseeId: number, status: FriendShipStatus) : Promise<Friends[] | null>;
+    getFriendRequestsByRequesterIdToAddresseeId(requesterId: number, addresseeId: number, status: FriendShipStatus, createdAt: Date) : Promise<Friends[] | null>;
     getFriendRequestsByRequesterIdAndStatus(requesterId: number, addresseeId: number, status: FriendShipStatus) : Promise<Friends[] | null>;
 
     // Update Friend Request and Status
-    updateFriendRequestStatus(requesterId: number, addresseeId: number, status: FriendShipStatus) : Promise<Friends | null>;
-
-    // Delete Friend Request By Id
-    deleteFriendRequestById(requesterId: number, addresseeId: number) : Promise<Friends | null>;
+    updateFriendRequestStatus(requesterId: number, addresseeId: number, status: FriendShipStatus, updatedAt: Date) : Promise<Friends | null>;
 
     // Search Friends By User Id and Search Term
     searchFriendsByRequesterIdAndSearchTerm(requesterId: number, searchTerm: string) : Promise<Friends[] | null>;
@@ -57,14 +58,18 @@ export interface FriendsRepositoryInterface {
 
 export interface FriendsServicesInterface {
 
-    // Add and Remove Friend
-    addFriend(requesterId: number, addresseeId: number, status: FriendShipStatus) : Promise<FriendsResponseDto | null>;
-    removeFriend(requesterId: number, addresseeId: number) : Promise<FriendsResponseDto | null>;
+    // Add Friend interface Services 
+    addFriend(requesterId: number, addresseeId: number, createdAt: Date) : Promise<FriendsResponseDto | null>;
 
-    // Accept and Reject Friend Request
-    responseToFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus) : Promise<FriendsResponseDto | null>;
-    refuseFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus) : Promise<FriendsResponseDto | null>;
+    // Hard Delete Interface Services
+    HardDeleteFriendRequest(requesterId: number, addresseeId: number) : Promise<FriendsResponseDto | null>;
 
+    // Soft Delete Interfaces Services
+    SoftDeleteFriendRequest(requesterId: number, addresseeId: number, deletedAt: Date) : Promise<FriendsResponseDto | null>;
+
+    // Accept Friend Request Interface Services
+    responseOrAcceptFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus, friendAt: Date) : Promise<FriendsResponseDto | null>;
+    
     // Get Friends List By User Id
     getFriendsListByUserId(requesterId: number, status: FriendShipStatus) : Promise<FriendsResponseDto[] | null>;
     getFriendshipStatus(requesterId: number, addresseeId: number) : Promise<FriendsResponseDto | null>;
@@ -75,10 +80,7 @@ export interface FriendsServicesInterface {
     getFriendRequestsByRequesterIdAndStatus(requesterId: number, addresseeId: number, status: FriendShipStatus) : Promise<FriendsResponseDto[] | null>;
 
     // Update Friend Request and Status
-    updateFriendRequestStatus(requesterId: number, addresseeId: number, status: FriendShipStatus) : Promise<FriendsResponseDto | null>;
-
-    // Delete Friend Request By Id
-    deleteFriendRequestById(requesterId: number, addresseeId: number) : Promise<FriendsResponseDto | null>;
+    updateFriendRequestStatus(requesterId: number, addresseeId: number, status: FriendShipStatus, updatedAt: Date) : Promise<FriendsResponseDto | null>;
 
     // Search Friends By User Id and Search Term
     searchFriendsByUserIdAndSearchTerm(userId: number, searchTerm: string) : Promise<FriendsResponseDto[] | null>;
@@ -99,4 +101,4 @@ export interface FriendsServicesInterface {
 
     // Get History of Friend and Audit loginUserAccount
     getFriendshipHistoryByUserId(userId: number, friendId: number) : Promise<FriendsResponseDto[] | null>;
-}
+}  

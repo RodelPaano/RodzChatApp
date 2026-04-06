@@ -16,7 +16,7 @@ export class ChatRoomsServices implements ChatRoomsServicesInterface {
         this.chatRoomMapper = new ChatRoomMapper();
     }
     
-    // ================================ Create ChatRoom Serviices ==================================================
+    // ================================ Create ChatRoom Services ==================================================
     public async createChatRoom(chatRoom: ChatRoomsCreation): Promise<ChatRoomsResponseDto | null> {
         try {
             const validationError = ChatRoomHelper.validateCreateChatRoom(chatRoom);

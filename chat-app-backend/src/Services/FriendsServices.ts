@@ -17,19 +17,25 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================ And and Remove Friend ============================
-    public async addFriend(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
+    public async addFriend(requesterId: number, addresseeId: number, createdAt: Date): Promise<FriendsResponseDto | null> {
         try {
-            (FriendShipStatus.Pending);
-            if(!canAddFriend(status)){
-                throw new Error(`Invalid Friendship Status: ${getFriendshipMessage(status)}`);
+            if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)) {
+                throw new Error(`Requester ID and Addressee ID must be valid numbers. Requester ID: ${requesterId}, Addressee ID: ${addresseeId}`);
             }
-            const friend = await this.friendsRepository.addFriend(requesterId, addresseeId);
+
+            if(!createdAt || !(createdAt instanceof Date) || isNaN(createdAt.getTime())) {
+                throw new Error(`Created At must be a valid date. Created At: ${createdAt}`);
+            }
+
+            const friend = await this.friendsRepository.addFriend(requesterId, addresseeId, createdAt);
             if(!friend || friend.status !== FriendShipStatus.Pending){
                 throw new Error(`Failed to send friend request. Current status: ${getFriendshipMessage(friend?.status ?? FriendShipStatus.Blocked)}`);
             }
             
             const friendDto = this.friendsAutoMapper.mapToDto(friend);
 
+            await this.redisClient.del(`friends:${requesterId}`)
+            await this.redisClient.expire(`friends:${requesterId}`, 3600);
             await this.redisClient.del(`friends:${addresseeId}`)
             await this.redisClient.expire(`friends:${addresseeId}`, 3600);
 
@@ -40,12 +46,15 @@ export default class FriendsServices implements FriendsServicesInterface {
         }
     }
 
-    public async removeFriend(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
+
+    // ====================================================== Hard Delete Friend Request By User ID and Friend ID ====================================================== //
+    public async HardDeleteFriendRequest(requesterId: number, addresseeId: number): Promise<FriendsResponseDto | null> {
         try {
-            if(!Number.isInteger(userId) || !Number.isInteger(friendId)){
+            if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("User ID and Friend ID must be valid numbers.");
             }
-            const removeFriend = await this.friendsRepository.removeFriendRequest(userId, friendId);
+
+            const removeFriend = await this.friendsRepository.HardDeleteFriendRequest(requesterId, addresseeId);
             if(!removeFriend ){
                 throw new Error("Failed to remove friend. No Existing Friend Relationship Found.");
             }
@@ -54,14 +63,44 @@ export default class FriendsServices implements FriendsServicesInterface {
             }
             const removeFriendDto = this.friendsAutoMapper.mapToDto(removeFriend);
 
-            await this.redisClient.del(`friends:${friendId}`)
-            await this.redisClient.expire(`friends:${friendId}`, 3600);
+            await this.redisClient.del(`friends:${requesterId}`)
+            await this.redisClient.expire(`friends:${addresseeId}`, 3600);
 
             return removeFriendDto;
         } catch (error) {
             console.error("Error Removing Friend:", error);
             throw error;
         } 
+    }
+
+
+    // ====================================================== Soft Delete Friend Request By User ID and Friend ID ====================================================== //
+    public async SoftDeleteFriendRequest(requesterId: number, addresseeId: number, deletedAt:  Date) : Promise<FriendsResponseDto | null> {
+        try {
+            if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)) {
+                throw new Error(`Requester ID and Addressee ID must be Valid Numbers. Requester ID: ${requesterId}, Addressee ID: ${addresseeId}`);
+            }
+
+            if(!deletedAt || !(deletedAt instanceof Date) || isNaN(deletedAt.getDate())) {
+                throw new Error(`Deleted At must be a valid date. Deleted At: ${deletedAt}`);
+            }
+
+            const softDeleteFriendRequest = await this.friendsRepository.softDeleteFriendRequest(requesterId, addresseeId, deletedAt);
+            if(!softDeleteFriendRequest || softDeleteFriendRequest.status !== FriendShipStatus.Pending) {
+                throw new Error(`Failed to delete friend request. Current status: ${getFriendshipMessage(softDeleteFriendRequest?.status ?? FriendShipStatus.Blocked)}`);
+            }
+
+            const softDeleteFriendRequestDto = this.friendsAutoMapper.mapToDto(softDeleteFriendRequest);
+            await this.redisClient.del(`friendRequests:${requesterId}:${addresseeId}`);
+            await this.redisClient.expire(`friendRequests:${requesterId}:${addresseeId}`, 3600);
+            await this.redisClient.del(`friendRequests:${addresseeId}:${requesterId}`);
+            await this.redisClient.expire(`friendRequests:${addresseeId}:${requesterId}`, 3600);
+            return softDeleteFriendRequestDto;
+
+        } catch (error) {
+            console.error("Error Soft Deleting Friend Request:", error);
+            throw error;
+        }
     }
 
 
@@ -93,21 +132,21 @@ export default class FriendsServices implements FriendsServicesInterface {
         }
     }
 
-    public async getFriendshipStatus(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
+    public async getFriendshipStatus(requesterId: number, addresseeId: number): Promise<FriendsResponseDto | null> {
         try {
-            if(!Number.isInteger(userId) || !Number.isInteger(friendId)){
+            if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("User ID and Friend ID must be valid numbers.");
             }
 
-            const friendshipStatus = await this.friendsRepository.getFriendshipStatus(userId, friendId);
+            const friendshipStatus = await this.friendsRepository.getFriendshipStatus(requesterId, addresseeId);
             if(!friendshipStatus){
                 throw new Error("No Friendship Status Found.");
             }
             
             const friendshipStatusDto = this.friendsAutoMapper.mapToDto(friendshipStatus);
 
-            await this.redisClient.del(`friendshipStatus:${userId}:${friendId}`);
-            await this.redisClient.expire(`friendshipStatus:${userId}:${friendId}`, 3600);
+            await this.redisClient.del(`friendshipStatus:${requesterId}:${addresseeId}`);
+            await this.redisClient.expire(`friendshipStatus:${requesterId}:${addresseeId}`, 3600);
             
             return friendshipStatusDto;
 
@@ -117,9 +156,9 @@ export default class FriendsServices implements FriendsServicesInterface {
         }
     }
 
-    public async getFriendshipStatusByList(userId: number, friendId: number, statusList: FriendShipStatus[]): Promise<FriendsResponseDto[] | null> {
+    public async getFriendshipStatusByList(requesterId: number, addresseeId: number, statusList: FriendShipStatus[]): Promise<FriendsResponseDto[] | null> {
         try {
-            if(!Number.isInteger(userId) || !Number.isInteger(friendId)){
+            if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("User ID and Friend ID must be valid numbers.");
             }
             if(!Array.isArray(statusList) || statusList.length === 0){
@@ -132,13 +171,13 @@ export default class FriendsServices implements FriendsServicesInterface {
                     throw new Error(`Invalid Friendship Status in List: ${status}`);
                 }
             }
-            const friendshipStatusList = await this.friendsRepository.getFriendshipStatusByList(userId, friendId, statusList);
+            const friendshipStatusList = await this.friendsRepository.getFriendshipStatusByList(requesterId, addresseeId, statusList);
             if(!friendshipStatusList || friendshipStatusList.length === 0){
                 throw new Error("No Friendship Status Found for the provided status list.");
             }
             const friendshipStatusListDto = this.friendsAutoMapper.mapToDtoList(friendshipStatusList);
-            await this.redisClient.del(`friendshipStatusList:${userId}:${friendId}`);
-            await this.redisClient.expire(`friendshipStatusList:${userId}:${friendId}`, 3600);
+            await this.redisClient.del(`friendshipStatusList:${requesterId}:${addresseeId}`);
+            await this.redisClient.expire(`friendshipStatusList:${requesterId}:${addresseeId}`, 3600);
             return friendshipStatusListDto;
         } catch (error) {
             console.error("Error Getting Friendship Status By List:", error);
@@ -148,7 +187,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================================================= Accept and Reject Friend Request ============================================================= //
-    public async responseToFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
+    public async responseOrAcceptFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus, friendAt: Date): Promise<FriendsResponseDto | null> {
         try {
             if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("Requester ID and Addressee ID must be valid numbers.");
@@ -156,7 +195,11 @@ export default class FriendsServices implements FriendsServicesInterface {
             if(!Object.values(FriendShipStatus).includes(status)){
                 throw new Error(`Invalid Friendship Status: ${status}`);  
             }
-            const response = await this.friendsRepository.respondToFriendRequest(requesterId, addresseeId, status);
+
+            if(!friendAt || !(friendAt instanceof Date) || isNaN(friendAt.getTime())) {
+                throw new Error(`Friend At must be a valid date. Friend At: ${friendAt}`);
+            }
+            const response = await this.friendsRepository.respondOrAcceptFriendRequest(requesterId, addresseeId, status, friendAt);
             if(!response){
                 throw new Error("Failed to respond to friend request. No Existing Friend Request Found.");
             }
@@ -168,28 +211,6 @@ export default class FriendsServices implements FriendsServicesInterface {
             return responseDto;
         } catch (error) {
             console.error("Error Responding to Friend Request:", error);
-            throw error;
-        }
-    }
-
-    public async refuseFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
-        try {
-            if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
-                throw new Error("Requester ID and Addressee ID must be valid numbers.");
-            }
-            if(!Object.values(FriendShipStatus).includes(status)){
-                throw new Error(`Invalid Friendship Status: ${status}`);  
-            }
-            const response = await this.friendsRepository.refuseFriendRequest(requesterId, addresseeId, status);
-            if(!response){
-                throw new Error(`Failed to respond to friend request with status: ${status}. No existing request found.`);
-            }
-            const responseDto = this.friendsAutoMapper.mapToDto(response);
-            await this.redisClient.del(`friendRequests:${addresseeId}`);
-            await this.redisClient.expire(`friendRequests:${addresseeId}`, 3600);
-            return responseDto;
-        } catch (error) {
-            console.error("Error Refusing Friend Request:", error);
             throw error;
         }
     }
@@ -245,7 +266,7 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================ Update Friend Request Status ============================= //
-    public async updateFriendRequestStatus(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<FriendsResponseDto | null> {
+    public async updateFriendRequestStatus(requesterId: number, addresseeId: number, status: FriendShipStatus, updatedAt: Date): Promise<FriendsResponseDto | null> {
         try {
             if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("Requester ID and Addressee ID must be valid numbers.");
@@ -254,7 +275,7 @@ export default class FriendsServices implements FriendsServicesInterface {
                 throw new Error(`Invalid Friendship Status: ${status}`);
             }
 
-            const updateRequest = await this.friendsRepository.updateFriendRequestStatus(requesterId, addresseeId, status);
+            const updateRequest = await this.friendsRepository.updateFriendRequestStatus(requesterId, addresseeId, status, updatedAt || new Date());
             if(!updateRequest || updateRequest.status === status) {
                 throw new Error(`Failed to update friend request status to ${status}. No existing request found or status is already ${status}.`)
             }
@@ -267,27 +288,6 @@ export default class FriendsServices implements FriendsServicesInterface {
 
         } catch (error) {
             console.error("Error Updating Friend Request Status:", error);
-            throw error;
-        }
-    }
-
-
-    // ============================ Delete Friend Request By requesterId ============================= //
-    public async deleteFriendRequestById(requesterId: number, addresseeId: number): Promise<FriendsResponseDto | null> {
-        try {
-            if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
-                throw new Error("Requester ID and Addressee ID must be valid numbers.");
-            }
-            const deleteRequest = await this.friendsRepository.deleteFriendRequestById(requesterId);
-            if(!deleteRequest){
-                throw new Error("Failed to delete friend request. No existing request found.");
-            }
-            const deleteRequestDto = this.friendsAutoMapper.mapToDto(deleteRequest);
-            await this.redisClient.del(`friendRequests:${addresseeId}`);
-            await this.redisClient.expire(`friendRequests:${addresseeId}`, 3600);
-            return deleteRequestDto;
-        } catch (error) {
-            console.error("Error Deleting Friend Request:", error);
             throw error;
         }
     }

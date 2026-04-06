@@ -1,25 +1,28 @@
 import { Friends, FriendShipStatus } from "../Models/Friends";
 import { FriendsRepositoryInterface } from "../Interfaces/FriendsInterfaces";
 import { pool as pg_connection } from "../Config/pg_connection";
+import { create } from "domain";
 
 export default class FriendsRepository implements FriendsRepositoryInterface {
     private pg = pg_connection;
 
 
-    // ============================================ Add and Remove Friend ====================================//
-    async addFriend(requesterId: number, addresseeId: number): Promise<Friends | null> {
+    // ============================================ Add New Friend ====================================//
+    async addFriend(requesterId: number, addresseeId: number, createdAt: Date): Promise<Friends | null> {
         
-        const query = 'INSERT INTO friends (requesterId, addresseeId, status, createdAt, updatedAt, deletedAt) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *';
-        const values = [requesterId, addresseeId, FriendShipStatus.Pending, new Date(), new Date(), null];
+        const query = 'INSERT INTO friends (requesterId, addresseeId, status, createdAt) VALUES ($1, $2, $3, $4) RETURNING *';
+        const values = [requesterId, addresseeId, FriendShipStatus.Pending, createdAt];
 
         const result = await this.pg.query(query, values);
 
         return result.rows[0] || null;
     }
 
-    async removeFriendRequest(requesterId: number, addresseeId: number): Promise<Friends | null> {
+
+    // =========================================== Hard Remove Friend Request By Requester ID and Addressee ID =========================================//
+    async HardDeleteFriendRequest(requesterId: number, addresseeId: number): Promise<Friends | null> {
         
-        const query = 'DELETE FROM friends WHERE ((requesterId = $1 AND addresseeId = $2) OR (requesterId = $2 AND addresseeId = $1)) AND status = $3 RETURNING *';
+        const query = 'DELETE FROM friends WHERE requesterId = $1 AND addresseeId = $2 AND status = $3 RETURNING *';
         const values = [requesterId, addresseeId, FriendShipStatus.Pending];
 
         const result = await this.pg.query(query, values);
@@ -27,33 +30,47 @@ export default class FriendsRepository implements FriendsRepositoryInterface {
         return result.rows[0] || null;
     }
 
-    // ========================= Response and Refuse Friend Request and Process in the Database =========================== //
-    async respondToFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<Friends | null> {
+
+    // =========================================== Soft Delete Friend Request By Requester ID and Addressee ID =========================================//
+    async softDeleteFriendRequest(requesterId: number, addresseeId: number, deletedAt: Date): Promise<Friends | null> {
         
-        const query = 'UPDATE friends set status = $1, updatedAt = $2 WHERE ((requesterId = $3 AND addresseeId = $4) OR (requesterId = $4 AND addresseeId = $3)) RETURNING *';
-        const values = [status, new Date(), requesterId, addresseeId];
+        const query = `UPDATE friends SET deletedAt = $1 WHERE requesterId = $2 AND addresseeId = $3 AND status = $4 RETURNING *`;
+
+        const values = [deletedAt, requesterId, addresseeId, FriendShipStatus.Pending];
 
         const result = await this.pg.query(query, values);
 
         return result.rows[0] || null;
     }
 
-    async refuseFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<Friends | null> {
+
+
+    // ========================= Response and Refuse Friend Request and Process in the Database =========================== //
+    async respondOrAcceptFriendRequest(requesterId: number, addresseeId: number, status: FriendShipStatus, acceptedAt: Date): Promise<Friends | null> {
         
-        const query = 'DELETE FROM friends WHERE ((requesterId = $1 AND addresseeId = $2 ) OR (requesterId = $2 AND addresseeId = $1)) AND status = $3 RETURNING *';
-        const values = [requesterId, addresseeId, status || FriendShipStatus.Pending, new Date()];
+        const query = `UPDATE friends SET status = $1, acceptedAt = $2, WHERE (requesterId = $3 AND addresseeId = $4) OR (requesterId = $4 AND addresseeId = $3) RETURNING *`;
+
+        const values = [status, acceptedAt, requesterId, addresseeId];
 
         const result = await this.pg.query(query, values);
 
         return result.rows[0] || null;
+
     }
 
 
     // ====================================== Get All Friends By List By User Id =============================================//
-    async getFriendRequestsByRequesterIdToAddresseeId(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<Friends[] | null> {
+    async getFriendRequestsByRequesterIdToAddresseeId(requesterId: number, addresseeId: number, status: FriendShipStatus, createdAt?: Date): Promise<Friends[] | null> {
         
-        const query = 'SELECT * FROM friends WHERE addresseeId = $1 AND status = $2 AND deletedAt IS NULL';
-        const values = [requesterId, addresseeId, status || FriendShipStatus.Pending];
+        const query = 'SELECT * FROM friends WHERE addresseeId = $1 AND requesterId = $2 AND status = $3 AND deletedAt IS NULL';
+
+        const values : any[] = [requesterId, addresseeId, status || FriendShipStatus.Pending];
+
+        if(!createdAt) {
+            values.push(new Date());
+        } else {
+            values.push(createdAt);
+        }
 
         const result = await this.pg.query(query, values);
 
@@ -104,28 +121,15 @@ export default class FriendsRepository implements FriendsRepositoryInterface {
     }
 
     // ========================================= Update Friend Request and Status =========================================
-    async updateFriendRequestStatus(requesterId: number, addresseeId: number, status: FriendShipStatus): Promise<Friends | null> {
+    async updateFriendRequestStatus(requesterId: number, addresseeId: number, status: FriendShipStatus, updatedAt: Date): Promise<Friends | null> {
         
         const query = 'UPDATE friends SET status = $1, updatedAt = $2 WHERE ((requesterId = $3 AND addresseeId = $4) OR (requesterId = $4 AND addresseeId = $3)) RETURNING *';
-        const values = [status, new Date(), requesterId, addresseeId];
+        const values = [status, updatedAt = new Date(), requesterId, addresseeId];
 
         const result = await this.pg.query(query, values);
 
         return result.rows[0] || null;
     }
-
-
-    // ======================================= Delete Friend Request By Id =========================================== //
-    async deleteFriendRequestById(requesterId: number): Promise<Friends | null> {
-        
-        const query = 'DELETE FROM friends WHERE id = $1 RETURNING *';
-        const values = [requesterId || 0];
-
-        const result = await this.pg.query(query, values);
-
-        return result.rows[0] || null;
-    }
-
 
     // ========================================= Search Friends By User Id and Search Term ====================================== //
     async searchFriendsByRequesterIdAndSearchTerm(requesterId: number, searchTerm: string): Promise<Friends[] | null> {
