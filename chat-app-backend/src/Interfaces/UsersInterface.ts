@@ -47,6 +47,12 @@ export interface UsersRepositoryInterface {
     // Delete User Account Data
     deleteUserAccountById(id: number) : Promise<Users | null>;
 
+    // Forgot and Reset Password User Interfaces
+    forgotPassword(id: number ,email: string, newPassword: string) : Promise<Users | null>;
+    resetPassword(id: number, email: string, newPassword: string) : Promise<Users | null>;
+
+    // Login With Google Account User Interfaces
+    loginWithGoogleAccount(email: string, firstName: string, lastName: string, password: string) : Promise<Users | null>;
 
 }
 
@@ -87,4 +93,11 @@ export interface UsersServiceInterface {
 
     // Delete User Services Dto Data
     deleteUserAccountById(id: number) : Promise<UsersResponseDto | null>;
+
+    // Forgot and Reset Password User Services Dto Interfaces
+    forgotPassword(id: number ,email: string, newPassword: string) : Promise<UsersResponseDto | null>;
+    resetPassword(id: number, email: string, newPassword: string) : Promise<UsersResponseDto | null>;
+
+    // Login With Google Account User Services Dto Interfaces
+    loginWithGoogleAccount(email: string, firstName: string, lastName: string, password: string) : Promise<UsersResponseDto  | null>;
 }

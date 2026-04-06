@@ -9,7 +9,7 @@ export default class UsersControllers  {
         this.userServices = userServices
     }
 
-    async createUserAccount(req: Request, res: Response): Promise<Response | null> {
+    public async createUserAccount(req: Request, res: Response): Promise<Response | null> {
         const user = req.body;
 
         const createUserAccountResponse = await this.userServices.createUserAccount(user);
@@ -19,7 +19,7 @@ export default class UsersControllers  {
         return res.status(201).json({success: true, data: createUserAccountResponse});
     }
 
-    async loginUserAccount(req: Request, res: Response): Promise<Response | null> {
+    public async loginUserAccount(req: Request, res: Response): Promise<Response | null> {
         try {
             const { email, password } = req.body;
             const loginUserAccountResponse = await this.userServices.loginUserAccount(email, password);
@@ -32,7 +32,7 @@ export default class UsersControllers  {
         }
     }
 
-    async updateUserDetailsAccountById(req: Request, res: Response): Promise<Response | null> {
+    public async updateUserDetailsAccountById(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
             const user = req.body;
@@ -46,7 +46,7 @@ export default class UsersControllers  {
         }
     }
 
-    async updateUserRole(req: Request, res: Response): Promise<Response | null> {
+    public async updateUserRole(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
             const { role } = req.body;
@@ -60,7 +60,7 @@ export default class UsersControllers  {
         }
     }
 
-    async updateUserEmailAndPasswordById(req: Request, res: Response): Promise<Response | null> {
+    public async updateUserEmailAndPasswordById(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
             const { email, password } = req.body;
@@ -74,7 +74,7 @@ export default class UsersControllers  {
         }
     }
 
-    async getUserAccountById(req: Request, res: Response): Promise<Response | null> {
+    public async getUserAccountById(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
             const getUserAccountByIdResponse = await this.userServices.getUserAccountById(id);
@@ -87,7 +87,7 @@ export default class UsersControllers  {
         }
     }
 
-    async getUserAccountByEmail(req: Request, res: Response): Promise<Response | null> {
+    public async getUserAccountByEmail(req: Request, res: Response): Promise<Response | null> {
         try {
             const email = req.params.email;
             const getUserAccountByEmailResponse = await this.userServices.getUserAccountByEmail(email);
@@ -100,7 +100,7 @@ export default class UsersControllers  {
         }
     }
 
-    async findAllUsers(req: Request, res: Response): Promise<Response | null> {
+    public async findAllUsers(req: Request, res: Response): Promise<Response | null> {
         try {
             const findAllUsersResponse = await this.userServices.findAllUsers();
             if(!findAllUsersResponse) {
@@ -112,7 +112,7 @@ export default class UsersControllers  {
         }
     }
 
-    async findAndPaginated(req: Request, res: Response): Promise<Response | null> {
+    public async findAndPaginated(req: Request, res: Response): Promise<Response | null> {
         try {
             const page = parseInt(req.query.page as string);
             const limit = parseInt(req.query.limit as string);
@@ -126,7 +126,7 @@ export default class UsersControllers  {
         }
     }
 
-    async searchUserAccount(req: Request, res: Response): Promise<Response | null> {
+    public async searchUserAccount(req: Request, res: Response): Promise<Response | null> {
         try {
             const search = req.query.search as string;
             const searchUserAccountResponse = await this.userServices.searchUserAccount(search);
@@ -139,7 +139,7 @@ export default class UsersControllers  {
         }
     }
 
-    async verifyUserAccountById(req: Request, res: Response): Promise<Response | null> {
+    public async verifyUserAccountById(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
             const verifyUserAccountByIdResponse = await this.userServices.verifyUserAccountById(id);
@@ -152,7 +152,7 @@ export default class UsersControllers  {
         }
     }
 
-    async blockUserAccountById(req: Request, res: Response): Promise<Response | null> {
+    public async blockUserAccountById(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
             const blockUserAccountByIdResponse = await this.userServices.blockUserAccountById(id);
@@ -165,7 +165,7 @@ export default class UsersControllers  {
         }
     }
 
-    async setBlockedUserAccountById(req: Request, res: Response): Promise<Response | null> {
+    public async setBlockedUserAccountById(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
             const { isBlocked } = req.body;
@@ -179,7 +179,7 @@ export default class UsersControllers  {
         }
     }
 
-    async getUserIsOnline(req: Request, res: Response): Promise<Response | null> {
+    public async getUserIsOnline(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
             const { isOnline, isBlocked, isDeleted, lastLogin } = req.body;
@@ -193,7 +193,7 @@ export default class UsersControllers  {
         }
     }
 
-    async updateUserIfLogoutOrOffline(req: Request, res: Response): Promise<Response | null> {
+    public async updateUserIfLogoutOrOffline(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
             const { isOnline } = req.body;
@@ -207,7 +207,7 @@ export default class UsersControllers  {
         }
     }
 
-    async updateUserLastActiveStatus(req: Request, res: Response): Promise<Response | null> {
+    public async updateUserLastActiveStatus(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
             const { lastLogin } = req.body;

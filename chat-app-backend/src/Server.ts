@@ -31,7 +31,7 @@ io.on("connection", (socket) => {
 // Use redisClient explicitly to avoid warning
 (async () => {
   try {
-    await redisClient.set("testKey", "Hello Rodel");
+    await redisClient.set("testKey", "Production Redis Connection Successful");
     const value = await redisClient.get("testKey");
     console.log("🔑 Redis test value:", value);
   } catch (err) {
