@@ -10,6 +10,7 @@ import { loginInput, updateUserEmailAndPasswordInput, updateUserInput, UpdateUse
 import { regexEmail, validateEmail, validatePasswordInput, validateVerifyAccountInput } from "../Helper/RegexEmail";
 import {redisClient as redisClient} from "../Config/redis_connection";
 import { removeSpecialCharacters, validateSearchInput, validateSearchType } from "../Helper/SearchHelper";
+import * as AuthGoogle from "../Utils/AuthGoogle";
 
 
 
@@ -17,6 +18,7 @@ export default class UsersServices implements UsersServiceInterface {
     private usersRepository: UsersRepository;
     private redisClient = redisClient;
     private mapper: UsersAutoMapper ;
+    private authGoogle = AuthGoogle;
     constructor (usersRepository: UsersRepository, mapper: UsersAutoMapper) {
         this.usersRepository = usersRepository;
         this.mapper = mapper;
@@ -70,7 +72,7 @@ export default class UsersServices implements UsersServiceInterface {
             userModel.role = user.role as UserRole;
 
             // Create the User Account in the Database
-            const createdUser = await (this.usersRepository as UsersRepositoryInterface).createUserAccount(userModel);
+            const createdUser = await this.usersRepository.createUserAccount(userModel);
             if(!createdUser) {
                 throw new Error("Failed to Create User Account");
             }
@@ -534,8 +536,6 @@ export default class UsersServices implements UsersServiceInterface {
         }
     }
 
-
-
     // ==================================================================== Delete User Account Services and Process and Check the Business Logic =========================================================================  // 
     public async deleteUserAccountById(id: number): Promise<UsersResponseDto | null> {
         try {
@@ -557,6 +557,95 @@ export default class UsersServices implements UsersServiceInterface {
         }
     }
 
+    // ==================================================================== Forgot Password and Reset Password USer Account Services and Process and Check the Business Logic =========================================================================  //
+    public async forgotPassword(id: number, email: string, newPassword: string, token: string): Promise<UsersResponseDto | null> {
+        try {
+            const payload = await this.authGoogle.verifyGoogleToken(token);
+            if(!payload || payload.email !== email) {
+                throw new Error("Invalid Google Token");
+            }
+
+            const user = await this.usersRepository.getUserAccountByEmail(email);
+            if(!user) {
+                throw new Error("User Not Found");
+            }
+
+            const hashedPassword = await hashPassword(newPassword);
+
+            const updatedUser = await this.usersRepository.updateUserEmailAndPasswordById(id, email, hashedPassword);
+            if(!updatedUser) {
+                throw new Error("Failed to Update User Email and Password");
+            }
+
+            const dtoUser = this.mapper.mapToDto(updatedUser);
+            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(updatedUser), {
+                EX: 3600 // Set the expiration time to 1 hour
+            });
+
+            return dtoUser;
+        } catch (error) {
+            console.error("Error Forgot Password:", error);
+            throw error;
+        }
+    }
+
+    public async resetPassword(id: number, email: string, newPassword: string, token: string): Promise<UsersResponseDto | null> {
+        try {
+            const payload = await this.authGoogle.verifyGoogleToken(token);
+            if(!payload || payload.email !== email) {
+                throw new Error("Invalid Google Token");
+            }
+
+            const user = await this.usersRepository.getUserAccountByEmail(email);
+            if(!user) {
+                throw new Error("User Not Found");
+            }
+
+            const hashedPassword = await hashPassword(newPassword);
+
+            const updatedUser = await this.usersRepository.resetPassword(id, email, hashedPassword, token);
+            if(!updatedUser) {
+                throw new Error("Failed to Reset Password");
+            }
+
+            const dtoUser = this.mapper.mapToDto(updatedUser);
+            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(updatedUser), {
+                EX: 3600 // Set the expiration time to 1 hour
+            });
+
+            return dtoUser;
+
+        } catch (error) {
+            console.error("Error Reset Password:", error);
+            throw error;
+        }
+    }
+
+    // ===================================================================== Login With Google Account User Account Services and Process and Check the Business Logic =========================================================================  //
+    public async loginWithGoogleAccount(email: string, firstName: string, lastName: string, password: string, googleId: string, googleToken: string): Promise<UsersResponseDto  | null> {
+        try {
+            const payload = await this.authGoogle.verifyGoogleToken(googleToken);
+            if(!payload || payload.email !== email) {
+                throw new Error("Invalid Google Token");
+            }
+
+            const hashedPassword = await hashPassword(password);
+
+            const user = await this.usersRepository.loginWithGoogleAccount(email, firstName, lastName, hashedPassword, googleId, googleToken);
+            if(!user) {
+                throw new Error("Failed to Login With Google Account");
+            }
+            const dtoUser = this.mapper.mapToDto(user);
+            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(user), {
+                EX: 3600 // Set the expiration time to 1 hour
+            });
+
+            return dtoUser;
+        } catch (error) {
+            console.error("Error Login With Google Account:", error);
+            throw error;
+        }
+    }
 
     // ==================================================================== More Features User Account Add this User Services =================================================================== //
     

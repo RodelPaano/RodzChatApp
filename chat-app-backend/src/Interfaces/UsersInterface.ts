@@ -48,11 +48,11 @@ export interface UsersRepositoryInterface {
     deleteUserAccountById(id: number) : Promise<Users | null>;
 
     // Forgot and Reset Password User Interfaces
-    forgotPassword(id: number ,email: string, newPassword: string) : Promise<Users | null>;
-    resetPassword(id: number, email: string, newPassword: string) : Promise<Users | null>;
+    // forgotPassword(id: number ,email: string, newPassword: string, token: string) : Promise<Users | null>;
+    resetPassword(id: number, email: string, newPassword: string, token: string) : Promise<Users | null>;
 
     // Login With Google Account User Interfaces
-    loginWithGoogleAccount(email: string, firstName: string, lastName: string, password: string) : Promise<Users | null>;
+    loginWithGoogleAccount(email: string, firstName: string, lastName: string, password: string, googleId: string, googleToken: string) : Promise<Users | null>;
 
 }
 
@@ -95,9 +95,9 @@ export interface UsersServiceInterface {
     deleteUserAccountById(id: number) : Promise<UsersResponseDto | null>;
 
     // Forgot and Reset Password User Services Dto Interfaces
-    forgotPassword(id: number ,email: string, newPassword: string) : Promise<UsersResponseDto | null>;
-    resetPassword(id: number, email: string, newPassword: string) : Promise<UsersResponseDto | null>;
+    forgotPassword(id: number ,email: string, newPassword: string, token: string) : Promise<UsersResponseDto | null>;
+    resetPassword(id: number, email: string, newPassword: string, token: string) : Promise<UsersResponseDto | null>;
 
     // Login With Google Account User Services Dto Interfaces
-    loginWithGoogleAccount(email: string, firstName: string, lastName: string, password: string) : Promise<UsersResponseDto  | null>;
+    loginWithGoogleAccount(email: string, firstName: string, lastName: string, password: string, googleId: string, googleToken: string) : Promise<UsersResponseDto  | null>;
 }

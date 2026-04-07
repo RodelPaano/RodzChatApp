@@ -221,8 +221,6 @@ export default class UsersControllers  {
         }
     }
 
-    
-
     async deleteUserAccountById(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
