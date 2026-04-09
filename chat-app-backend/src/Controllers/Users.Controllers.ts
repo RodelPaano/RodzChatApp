@@ -1,7 +1,6 @@
 import UsersServices from "../Services/UsersServices";
 import { Request, Response } from "express";
 
-
 export default class UsersControllers  {
     private userServices : UsersServices;
     
@@ -229,6 +228,48 @@ export default class UsersControllers  {
                 return res.status(400).json({success: false, message: "Failed to delete user account by id"});
             }
             return res.status(200).json({success: true, data: deleteUserAccountByIdResponse});
+        } catch (error: any) {
+            return res.status(500).json({success: false, message: error.message});
+        }
+    }
+
+    // ================================================= Forgot Password and Reset Password User Controllers =================================================
+    public async forgotPassword(req: Request, res: Response): Promise<Response | null> {
+        try {
+            const { id, email, newPassword, token } = req.body;
+            const forgotPasswordResponse = await this.userServices.forgotPassword(id, email, newPassword, token);
+            if(!forgotPasswordResponse) {
+                return res.status(400).json({success: false, message: "Failed to forgot password"});
+            }
+            return res.status(200).json({success: true, data: forgotPasswordResponse});
+        } catch (error: any) {
+            return res.status(500).json({success: false, message: error.message});
+        }
+    }
+
+    public async resetPassword(req: Request, res: Response): Promise<Response | null> {
+        try {
+            const { id, email, newPassword, token } = req.body;
+            const resetPasswordResponse = await this.userServices.resetPassword(id, email, newPassword, token);
+            if(!resetPasswordResponse) {
+                return res.status(400).json({success: false, message: "Failed to reset password"});
+            }
+            return res.status(200).json({success: true, data: resetPasswordResponse});
+        } catch (error: any) {
+            return res.status(500).json({success: false, message: error.message});
+        }
+    }
+
+
+    // ================================================= Login With Google Account User Controllers =================================================
+    public async loginWithGoogleAccount(req: Request, res: Response): Promise<Response | null> {
+        try {
+            const { email, firstName, lastName, password, googleId, googleToken } = req.body;
+            const loginWithGoogleAccountResponse = await this.userServices.loginWithGoogleAccount(email, firstName, lastName, password, googleId, googleToken);
+            if(!loginWithGoogleAccountResponse) {
+                return res.status(400).json({success: false, message: "Failed to login with google account"});
+            }
+            return res.status(200).json({success: true, data: loginWithGoogleAccountResponse});
         } catch (error: any) {
             return res.status(500).json({success: false, message: error.message});
         }

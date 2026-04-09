@@ -3,16 +3,20 @@ import googleApiConnection from "../Config/google_api_connection";
 
 const client = new OAuth2Client(googleApiConnection.clientId);
 
-export async function verifyGoogleToken(token: string) {
+export async function verifyGoogleToken(token: string) : Promise<any | null> {
     try {
         const ticket = await client.verifyIdToken({
             idToken: token,
-            audience: googleApiConnection.clientId, 
+            audience: googleApiConnection.clientId,
         });
         const payload = ticket.getPayload();
-        return payload;
+        if(!payload) {
+            return null;
+        }
+        return payload || null;
+
     } catch (error) {
         console.error("Error verifying Google token:", error);
-        return null;
+        throw new Error("Failed to verify Google token");
     }
 }

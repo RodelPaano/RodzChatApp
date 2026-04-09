@@ -12,8 +12,6 @@ import {redisClient as redisClient} from "../Config/redis_connection";
 import { removeSpecialCharacters, validateSearchInput, validateSearchType } from "../Helper/SearchHelper";
 import * as AuthGoogle from "../Utils/AuthGoogle";
 
-
-
 export default class UsersServices implements UsersServiceInterface {
     private usersRepository: UsersRepository;
     private redisClient = redisClient;
@@ -164,7 +162,6 @@ export default class UsersServices implements UsersServiceInterface {
         
     }
 
-
     public async updateUserRole(id: number, role: UserRole): Promise<UsersResponseDto | null> {
         try {
 
@@ -193,7 +190,6 @@ export default class UsersServices implements UsersServiceInterface {
             throw error;
         }
     }
-
 
     public async updateUserEmailAndPasswordById(id: number, email: string, password: string): Promise<UsersResponseDto | null> {
         try {
@@ -230,8 +226,6 @@ export default class UsersServices implements UsersServiceInterface {
             throw error;
         }
     }
-
-
 
     // ====================================================================== Get User Account Services and Process and Check the Business Logic =========================================================================  //
     public async getUserAccountById(id: number): Promise<UsersResponseDto | null> {
@@ -283,7 +277,6 @@ export default class UsersServices implements UsersServiceInterface {
         }
     }
 
-
     public async findAllUsers(): Promise<UsersResponseDto[] | null> {
         try {
 
@@ -304,7 +297,6 @@ export default class UsersServices implements UsersServiceInterface {
             throw error;
         }
     }
-
 
     // ============================================================================= Find Pagination User Account Services and Process and Check the Business Logic =========================================================================  //
     public async findAndPaginated(page: number, limit: number): Promise<UsersResponseDto[] | null> {
@@ -328,8 +320,6 @@ export default class UsersServices implements UsersServiceInterface {
             throw error;
         }
     }
-
-
 
     // ======================================================================== Search User Account Services and Process and Check the Business Logic =========================================================================  //
     public async searchUserAccount(search: string): Promise<UsersResponseDto[] | null> {
@@ -356,7 +346,6 @@ export default class UsersServices implements UsersServiceInterface {
             throw error;
         }
     }
-
 
     // ===============================================================  Verify User Account Services and Process and Check the Business Logic =========================================================================  //
     public async verifyUserAccountById(id: number): Promise<UsersResponseDto | null> {
@@ -393,7 +382,6 @@ export default class UsersServices implements UsersServiceInterface {
         }
     }
 
-
     // ========================================================================= Block User Account Services and Process and Check the Business Logic =========================================================================  //
     public async blockUserAccountById(id: number): Promise<UsersResponseDto | null> {
         try {
@@ -429,7 +417,6 @@ export default class UsersServices implements UsersServiceInterface {
         }
     }
 
-
     public async setBlockedUserAccountById(id: number, isBlocked: boolean): Promise<UsersResponseDto | null> {
         try {
             
@@ -457,7 +444,6 @@ export default class UsersServices implements UsersServiceInterface {
             throw error;
         }
     }
-
 
     // ===================================================================== Get User Is Online Services and Process and Check the Business Logic ========================================================================= //
     public async getUserIsOnline(id: number, isOnline: boolean, isBlocked: boolean, isDeleted: boolean, lastLogin: Date): Promise<boolean> {
@@ -493,7 +479,6 @@ export default class UsersServices implements UsersServiceInterface {
         }
     }
 
-
     public async updateUserIfLogoutOrOffline(id: number, isOnline: boolean): Promise<boolean> {
         try {
 
@@ -513,7 +498,6 @@ export default class UsersServices implements UsersServiceInterface {
             throw error;
         }
     }
-
 
     // ===================================================================== Update User Last Active Status Services and Process and Check the Business Logic ================================================================================== //
     public async updateUserLastActiveStatus(id: number, lastLogin: Date): Promise<boolean> {
@@ -572,13 +556,13 @@ export default class UsersServices implements UsersServiceInterface {
 
             const hashedPassword = await hashPassword(newPassword);
 
-            const updatedUser = await this.usersRepository.updateUserEmailAndPasswordById(id, email, hashedPassword);
+            const updatedUser = await this.usersRepository.resetPassword(id, email, hashedPassword);
             if(!updatedUser) {
                 throw new Error("Failed to Update User Email and Password");
             }
 
             const dtoUser = this.mapper.mapToDto(updatedUser);
-            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(updatedUser), {
+            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(dtoUser), {
                 EX: 3600 // Set the expiration time to 1 hour
             });
 
@@ -603,13 +587,13 @@ export default class UsersServices implements UsersServiceInterface {
 
             const hashedPassword = await hashPassword(newPassword);
 
-            const updatedUser = await this.usersRepository.resetPassword(id, email, hashedPassword, token);
+            const updatedUser = await this.usersRepository.resetPassword(id, email, hashedPassword);
             if(!updatedUser) {
                 throw new Error("Failed to Reset Password");
             }
 
             const dtoUser = this.mapper.mapToDto(updatedUser);
-            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(updatedUser), {
+            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(dtoUser), {
                 EX: 3600 // Set the expiration time to 1 hour
             });
 
@@ -631,12 +615,12 @@ export default class UsersServices implements UsersServiceInterface {
 
             const hashedPassword = await hashPassword(password);
 
-            const user = await this.usersRepository.loginWithGoogleAccount(email, firstName, lastName, hashedPassword, googleId, googleToken);
+            const user = await this.usersRepository.loginWithGoogleAccount(email, firstName, lastName, hashedPassword, googleId);
             if(!user) {
                 throw new Error("Failed to Login With Google Account");
             }
             const dtoUser = this.mapper.mapToDto(user);
-            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(user), {
+            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(dtoUser), {
                 EX: 3600 // Set the expiration time to 1 hour
             });
 

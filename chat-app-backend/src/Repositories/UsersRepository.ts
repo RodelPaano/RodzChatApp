@@ -261,7 +261,7 @@ export default class UsersRepository implements UsersRepositoryInterface {
     }    
 
 
-    async resetPassword(id: number, email: string, newPassword: string, token: string): Promise<Users | null> {
+    async resetPassword(id: number, email: string, newPassword: string): Promise<Users | null> {
         
         const query = `UPDATE users SET password = $1, updatedAt = $2 WHERE id = $3 AND email = $4 RETURNING *`;
 
@@ -271,10 +271,11 @@ export default class UsersRepository implements UsersRepositoryInterface {
     }
 
     // ==================== Login With Google Account Repository =====================
-    async loginWithGoogleAccount(email: string, firstName: string, lastName: string, password: string, googleId: string, googleToken: string): Promise<Users | null> {
-        const query = `INSERT INTO users (email, firstName, lastName, password, googleId, googleToken, isVerified, role, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, true, 'user', $7, $8) ON CONFLICT (email) DO UPDATE SET googleId = EXCLUDED.googleId, googleToken = EXCLUDED.googleToken RETURNING *`;
+    async loginWithGoogleAccount(email: string, firstName: string, lastName: string, password: string, googleId: string): Promise<Users | null> {
+        const query = `INSERT INTO users (email, firstName, lastName, password, googleId, isVerified, role, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, true, 'user',$6, $7) ON CONFLICT (email) DO UPDATE SET googleId = EXCLUDED.googleId, updatedAt = EXCLUDED.updatedAt RETURNING *`;
 
-        const values = [email, firstName, lastName, password, googleId, googleToken, new Date(), new Date()];
+        const now = new Date();
+        const values = [email, firstName, lastName, password, googleId, now, now];
         const result = await this.pg.query(query, values);
         return result.rows[0] || null;
     }
