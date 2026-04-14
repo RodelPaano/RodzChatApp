@@ -185,28 +185,6 @@ export default class UsersRepository implements UsersRepositoryInterface {
         return result.rows[0] || null;
     };
 
-    // =================== Block User Account By Id Repository =====================
-    async blockUserAccountById(id: number): Promise<Users | null> {
-        
-        const query = `UPDATE users SET isBlocked = true, updatedAt = $1 WHERE id = $2 RETURNING *`;
-
-        const values = [new Date(), id];
-
-        const result = await this.pg.query(query, values);
-        return result.rows[0] || null;
-    };
-
-    // =================== Set Blocked User Account By Id Repository =====================
-    async setBlockedUserAccountById(id: number, isBlocked: boolean): Promise<Users | null> {
-        
-        const query = `UPDATE users SET isBlocked = $1, updatedAt = $2 WHERE id = $3 RETURNING *`;
-
-        const values = [isBlocked, new Date(), id];
-        const result = await this.pg.query(query, values);
-
-        return result.rows[0] || null;
-    };
-
 
     // =================== Get User Is Online Repository =====================
     async getUserIsOnline(id: number, isOnline: boolean, isBlocked: boolean, isDeleted: boolean, lastLogin: Date): Promise<boolean> {

@@ -30,10 +30,6 @@ export interface UsersRepositoryInterface {
     // Verify User Account  Data
     verifyUserAccountById(id: number) : Promise<Users | null>;
 
-    // Block User Account Data
-    blockUserAccountById(id: number) : Promise<Users | null>;
-    setBlockedUserAccountById(id: number, isBlocked: boolean) : Promise<Users | null>;
-
     // Update or Get User Online Status
     getUserIsOnline(id: number, isOnline: boolean, isBlocked: boolean, isDeleted: boolean, lastLogin: Date) : Promise<boolean>;
     updateUserIfLogoutOrOffline(id: number, isOnline: boolean) : Promise<boolean>;
@@ -57,11 +53,12 @@ export interface UsersRepositoryInterface {
 }
 
 export interface UsersServiceInterface {
+    // Create and Auth User Services Dto Interfaces
     createUserAccount(user: Users) : Promise<UsersResponseDto | null>;
     loginUserAccount(email: string, password: string) : Promise<UsersResponseDto | null>;
 
     // Update the User Services Dto Data
-    updateUserDetailsAccountById(id: number, user: Users) : Promise<UsersResponseDto | null>;
+    updateUserDetailsById(id: number, user: Users) : Promise<UsersResponseDto | null>;
     updateUserRole(id: number, role: UserRole) : Promise<UsersResponseDto | null>;
     updateUserEmailAndPasswordById(id: number, email: string, password: string) : Promise<UsersResponseDto | null>;
 
@@ -78,10 +75,6 @@ export interface UsersServiceInterface {
 
     // Verify User Services Dto Data
     verifyUserAccountById(id: number) : Promise<UsersResponseDto | null>;
-
-    // Block User Services Dto Data
-    blockUserAccountById(id: number) : Promise<UsersResponseDto | null>;
-    setBlockedUserAccountById(id: number, isBlocked: boolean) : Promise<UsersResponseDto | null>;
 
     // Get User Account Data
     getUserIsOnline(id: number, isOnline: boolean, isBlocked: boolean, isDeleted: boolean, lastLogin: Date) : Promise<boolean>;

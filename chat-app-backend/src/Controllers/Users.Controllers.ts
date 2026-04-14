@@ -9,6 +9,7 @@ export default class UsersControllers  {
         this.userServices = userServices
     }
 
+    // ====================================== Create User Account and Login User Account User Controller ======================================
     public async createUserAccount(req: Request, res: Response): Promise<Response | null> {
         const user = req.body;
 
@@ -32,6 +33,7 @@ export default class UsersControllers  {
         }
     }
 
+    // ====================================== Update User Account Details, Role, Email and Password User Controller =======================================
     public async updateUserDetailsAccountById(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
@@ -74,6 +76,7 @@ export default class UsersControllers  {
         }
     }
 
+    // ====================================== Get User Account By ID and Email, Find All Users, Find and Paginated Users User Controller ======================================= //
     public async getUserAccountById(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
@@ -126,6 +129,7 @@ export default class UsersControllers  {
         }
     }
 
+    // ====================================== Search User Account, Verify User Account By ID User Controller ======================================= //
     public async searchUserAccount(req: Request, res: Response): Promise<Response | null> {
         try {
             const search = req.query.search as string;
@@ -152,6 +156,7 @@ export default class UsersControllers  {
         }
     }
 
+    // ====================================== Block User Account By ID, Set Blocked User Account By ID User  Controller ======================================= //
     public async blockUserAccountById(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
@@ -179,6 +184,7 @@ export default class UsersControllers  {
         }
     }
 
+    // ======================================= Get User Is Online, Update User If Logout or Offline User Controller ======================================= //
     public async getUserIsOnline(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
@@ -221,7 +227,8 @@ export default class UsersControllers  {
         }
     }
 
-    async deleteUserAccountById(req: Request, res: Response): Promise<Response | null> {
+    // ======================================= Delete User Account By ID User Controller ======================================= //
+    public async deleteUserAccountById(req: Request, res: Response): Promise<Response | null> {
         try {
             const id = parseInt(req.params.id);
             const deleteUserAccountByIdResponse = await this.userServices.deleteUserAccountById(id);
@@ -233,4 +240,101 @@ export default class UsersControllers  {
             return res.status(500).json({success: false, message: error.message});
         }
     }
+
+    // ======================================= Forgot Password and Reset Password User UsersControllers
+    public async forgotPassword(req: Request, res: Response) : Promise<Response | null> {
+        try {
+            const id = parseInt(req.params.id);
+            if(!isNaN(id)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Invalid User ID ${id}. User ID must be a number.`
+                });
+            }
+            const {email, newPassword, token} = req.body;
+            const forgotPasswordResponse = await this.userServices.forgotPassword(
+                id, 
+                email, 
+                newPassword, 
+                token);
+            if(!forgotPasswordResponse) {
+                return res.status(400).json({
+                    success: false, 
+                    message: `Failed to forgot password for User Account With ID ${id} and Email ${email}`
+                });
+            }
+            return res.status(200).json({
+                success: true, 
+                data: forgotPasswordResponse
+            });
+
+        } catch (error : any) {
+            return res.status(500).json({success: false, message: error.message});
+        }
+    }
+
+    public async resetPassword(req: Request, res: Response) : Promise<Response | null> {
+        try {
+            const id = parseInt(req.params.id);
+            if(isNaN(id)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Invalid User ID ${id}. User ID must be a number.`
+                });
+            }
+
+            const { email, newPassword, token} = req.body;
+            const resetPasswordResponse = await this.userServices.resetPassword(id ,email, newPassword, token);
+            if(!resetPasswordResponse) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Failed to reset password for User Account With ID ${id} and Email ${email}`
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: resetPasswordResponse
+            });
+
+        } catch (error : any) {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
+    // ======================================= Login With Google Account User Controller ======================================= //
+    public async loginWithGoogleAccount(req: Request, res: Response) : Promise<Response | null> {
+        try {
+            const { email, firstName, lastName, password, googleId, googleToken } = req.body;
+            if(!email || !firstName || !lastName || !password || !googleId || !googleToken) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Missing required fields. Please provide email, firstName, lastName, password, googleId and googleToken."
+                });
+            }
+            
+            const loginWithGoogleAccountResponse = await this.userServices.loginWithGoogleAccount(email, firstName, lastName, password, googleId, googleToken);
+            if(!loginWithGoogleAccountResponse) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Failed to login with google account for User Account With Email ${email}` 
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: loginWithGoogleAccountResponse
+            });
+
+        } catch (error : any) {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
 }

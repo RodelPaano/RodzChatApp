@@ -6,10 +6,18 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { pool } from "./Config/pg_connection";
 import { redisClient } from "./Config/redis_connection";
+import redoc from "redoc-express";
+import path from "path";
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
+
+
+// Serve the OpenAPI spec file
+app.get("/docs/openapi.yaml", (req, res) => {
+  res.sendFile(path.join(__dirname, "./docs/openapi.yaml"));
+});
 
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
