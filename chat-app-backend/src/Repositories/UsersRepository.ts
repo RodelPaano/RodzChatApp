@@ -218,16 +218,7 @@ export default class UsersRepository implements UsersRepositoryInterface {
         return result.rows.length > 0;
     };
 
-    // =================== Update User Message Status Repository =====================
-    async updateUserMessageStatus(id: number, messageStatus: MessageStatus): Promise<MessageStatus> {
-        
-        const query = ` UPDATE users SET statusMessage = $1, updatedAt = $2 WHERE id = $3 RETURNING *`;
-
-        const values = [messageStatus, new Date(), id];
-        const result = await this.pg.query(query, values);
-        return result.rows[0]?.statusMessage ?? null;
-    };
-
+    
     //  =================== Delete User Account By Id Repository =====================
     async deleteUserAccountById(id: number): Promise<Users | null> {
         

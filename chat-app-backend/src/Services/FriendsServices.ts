@@ -322,6 +322,11 @@ export default class FriendsServices implements FriendsServicesInterface {
             if(!Number.isInteger(userId) || !Number.isInteger(friendId)){
                 throw new Error("User ID and Friend ID must be valid numbers.");
             }
+
+            if(userId === friendId) {
+                throw new Error("User cannot Block Your Self");
+            }
+            
             const blockFriend = await this.friendsRepository.blockFriendById(userId, friendId);
             if(!blockFriend) {
                 throw new Error("Failed to block friend. No existing friend found.");

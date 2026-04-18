@@ -192,7 +192,18 @@ export default class FriendsRepository implements FriendsRepositoryInterface {
     // ================================================= Get Manual Friends Between Two Users ============================================================//
     async getMutualFriendsBetweenUsers(requesterId: number, otherUserId: number): Promise<Friends[] | null> {
         
-        const query = 'SELECT * FROM friends WHERE ((requesterId = $1 AND addresseeId = $2) OR (requesterId = $2 AND addresseeId = $1)) AND status = $3 AND deletedAt IS NULL';
+        const query = `SELECT DISTINCT CASE WHEN f1.requesterId = $1 THEN f1.addresseeId ELSE f1.requesterId END AS mutualFriend
+            FROM friends f1 JOIN friends f2 ON (
+                f1.requesterId = f2.requesterId AND f1.addresseeId = f2.addresseeId)
+                OR (f1.requesterId = f2.addresseeId AND f1.addresseeId = f2.requesterId)
+                WHERE f1.status = $3
+                    AND f2.status = $3
+                    AND f1.status = $3
+                    AND f1.deletedAt IS NULL
+                    AND f2.deletedAt IS NULL
+                    AND (f1.requesterId = $1 OR f1.addresseeId = $1)
+                    AND (f2.requesterId = $2 OR f2.addresseeId = $2)`;
+
         const values = [requesterId, otherUserId, FriendShipStatus.Accepted];
 
         const result = await this.pg.query(query, values);
@@ -203,39 +214,39 @@ export default class FriendsRepository implements FriendsRepositoryInterface {
 
     // ================================================= Get Suggestion Friends By User ID ==================================================================//
     async getSuggestedFriendsByRequesterId(requesterId: number, otherUserId: number): Promise<Friends[] | null> {
-  const query = `
-    SELECT f.* 
-    FROM friends f
-    JOIN users u ON (
-      (u.id = f.requesterId OR u.id = f.addresseeId)
-    )
-    WHERE f.status = $1
-      AND f.deletedAt IS NULL
-      AND (
-        -- u is friend of userId
-        EXISTS (
-          SELECT 1 FROM friends f1
-          WHERE (f1.requesterId = $2 OR f1.addresseeId = $2)
-            AND (u.id = f1.requesterId OR u.id = f1.addresseeId)
-            AND f1.status = $1
-            AND f1.deletedAt IS NULL
-        )
-        -- u is friend of otherUserId
-        AND EXISTS (
-          SELECT 1 FROM friends f2
-          WHERE (f2.requesterId = $3 OR f2.addresseeId = $3)
-            AND (u.id = f2.requesterId OR u.id = f2.addresseeId)
-            AND f2.status = $1
-            AND f2.deletedAt IS NULL
-        )
-      )
-      -- exclude the two users themselves
-      AND u.id NOT IN ($2, $3)
-  `;
-  const values = [FriendShipStatus.Accepted, requesterId, otherUserId];
+        const query = `
+            SELECT f.* 
+            FROM friends f
+            JOIN users u ON (
+            (u.id = f.requesterId OR u.id = f.addresseeId)
+            )
+            WHERE f.status = $1
+            AND f.deletedAt IS NULL
+            AND (
+                -- u is friend of userId
+                EXISTS (
+                SELECT 1 FROM friends f1
+                WHERE (f1.requesterId = $2 OR f1.addresseeId = $2)
+                    AND (u.id = f1.requesterId OR u.id = f1.addresseeId)
+                    AND f1.status = $1
+                    AND f1.deletedAt IS NULL
+                )
+                -- u is friend of otherUserId
+                AND EXISTS (
+                SELECT 1 FROM friends f2
+                WHERE (f2.requesterId = $3 OR f2.addresseeId = $3)
+                    AND (u.id = f2.requesterId OR u.id = f2.addresseeId)
+                    AND f2.status = $1
+                    AND f2.deletedAt IS NULL
+                )
+            )
+            -- exclude the two users themselves
+            AND u.id NOT IN ($2, $3)
+        `;
+        const values = [FriendShipStatus.Accepted, requesterId, otherUserId];
 
-  const result = await this.pg.query(query, values);
-  return result.rows.length > 0 ? result.rows : null;
+    const result = await this.pg.query(query, values);
+    return result.rows.length > 0 ? result.rows : null;
 }
 
 

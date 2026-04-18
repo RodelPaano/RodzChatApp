@@ -37,8 +37,6 @@ export interface UsersRepositoryInterface {
     // Update User Last Active Status and Tract the Last Login TimeStamps
     updateUserLastActiveStatus(id: number, lastLogin: Date) : Promise<boolean>;
     
-    // Update User Message Status
-    updateUserMessageStatus(id: number, messageStatus: MessageStatus) : Promise<MessageStatus>;
 
     // Delete User Account Data
     deleteUserAccountById(id: number) : Promise<Users | null>;
