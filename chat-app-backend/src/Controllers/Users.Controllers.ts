@@ -38,7 +38,7 @@ export default class UsersControllers  {
         try {
             const id = parseInt(req.params.id);
             const user = req.body;
-            const updateUserDetailsAccountByIdResponse = await this.userServices.updateUserDetailsAccountById(id, user);
+            const updateUserDetailsAccountByIdResponse = await this.userServices.updateUserDetailsById(id, user);
             if(!updateUserDetailsAccountByIdResponse) {
                 return res.status(400).json({success: false, message: "Failed to update user details account by id"});
             }
@@ -151,34 +151,6 @@ export default class UsersControllers  {
                 return res.status(400).json({success: false, message: "Failed to verify user account by id"});
             }
             return res.status(200).json({success: true, data: verifyUserAccountByIdResponse});
-        } catch (error: any) {
-            return res.status(500).json({success: false, message: error.message});
-        }
-    }
-
-    // ====================================== Block User Account By ID, Set Blocked User Account By ID User  Controller ======================================= //
-    public async blockUserAccountById(req: Request, res: Response): Promise<Response | null> {
-        try {
-            const id = parseInt(req.params.id);
-            const blockUserAccountByIdResponse = await this.userServices.blockUserAccountById(id);
-            if(!blockUserAccountByIdResponse) {
-                return res.status(400).json({success: false, message: "Failed to block user account by id"});
-            }
-            return res.status(200).json({success: true, data: blockUserAccountByIdResponse});
-        } catch (error: any) {
-            return res.status(500).json({success: false, message: error.message});
-        }
-    }
-
-    public async setBlockedUserAccountById(req: Request, res: Response): Promise<Response | null> {
-        try {
-            const id = parseInt(req.params.id);
-            const { isBlocked } = req.body;
-            const setBlockedUserAccountByIdResponse = await this.userServices.setBlockedUserAccountById(id, isBlocked);
-            if(!setBlockedUserAccountByIdResponse) {
-                return res.status(400).json({success: false, message: "Failed to set blocked user account by id"});
-            }
-            return res.status(200).json({success: true, data: setBlockedUserAccountByIdResponse});
         } catch (error: any) {
             return res.status(500).json({success: false, message: error.message});
         }

@@ -83,22 +83,22 @@ export interface FriendsServicesInterface {
     updateFriendRequestStatus(requesterId: number, addresseeId: number, status: FriendShipStatus, updatedAt: Date) : Promise<FriendsResponseDto | null>;
 
     // Search Friends By User Id and Search Term
-    searchFriendsByUserIdAndSearchTerm(userId: number, searchTerm: string) : Promise<FriendsResponseDto[] | null>;
+    searchFriendsByUserIdAndSearchTerm(requesterId: number, searchTerm: string) : Promise<FriendsResponseDto[] | null>;
 
     // Block and Unblocked Friend By id
-    blockFriendById(userId: number, friendId: number) : Promise<FriendsResponseDto | null>;
-    unblockFriendById(userId: number, friendId: number) : Promise<FriendsResponseDto | null>;
+    blockFriendById(requesterId: number, addresseeId: number) : Promise<FriendsResponseDto | null>;
+    unblockFriendById(requesterId: number, addresseeId: number) : Promise<FriendsResponseDto | null>;
 
     // Counts and Metrics of Friends
-    countFriendsByUserId(userId: number) : Promise<number>;
-    countPendingFriendRequestsByUserId(userId: number) : Promise<number>;
+    countFriendsByUserId(requesterId: number) : Promise<number>;
+    countPendingFriendRequestsByUserId(requesterId: number) : Promise<number>;
 
     // Get Mutual Friends Between Two Users
-    getMutualFriendsBetweenUsers(userId: number, otherUserId: number) : Promise<FriendsResponseDto[] | null>;
+    getMutualFriendsBetweenUsers(requesterId: number, otherUserId: number) : Promise<FriendsResponseDto[] | null>;
 
     // Get Suggestion Friends By User id
     getSuggestedFriendsByUserId(requesterId: number, otherUserId: number) : Promise<FriendsResponseDto[] | null>;
 
     // Get History of Friend and Audit loginUserAccount
-    getFriendshipHistoryByUserId(userId: number, friendId: number) : Promise<FriendsResponseDto[] | null>;
+    getFriendshipHistoryByUserId(requesterId: number, addresseeId: number) : Promise<FriendsResponseDto[] | null>;
 }  

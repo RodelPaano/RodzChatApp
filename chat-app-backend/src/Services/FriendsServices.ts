@@ -294,20 +294,20 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================ Search Friends By User ID and Search Term ============================= //
-    public async searchFriendsByUserIdAndSearchTerm(userId: number, searchTerm: string): Promise<FriendsResponseDto[] | null> {
+    public async searchFriendsByUserIdAndSearchTerm(requesterId: number, searchTerm: string): Promise<FriendsResponseDto[] | null> {
         try {
-            if(!Number.isInteger(userId)) {
-                throw new Error(`User ID must be a valid number. User ID: ${userId}`);
+            if(!Number.isInteger(requesterId)) {
+                throw new Error(`User ID must be a valid number. User ID: ${requesterId}`);
             }
 
-            const searchFriend = await this.friendsRepository.searchFriendsByRequesterIdAndSearchTerm(userId, searchTerm);
+            const searchFriend = await this.friendsRepository.searchFriendsByRequesterIdAndSearchTerm(requesterId, searchTerm);
             if(!searchFriend || searchFriend.length === 0) {
                 throw new Error("Failed to search friends. No existing friends found.");
             }
 
             const searchFriendDto = this.friendsAutoMapper.mapToDtoList(searchFriend);
-            await this.redisClient.del(`searchFriends:${userId}:${searchTerm}`);
-            await this.redisClient.expire(`searchFriends:${userId}:${searchTerm}`, 3600);
+            await this.redisClient.del(`searchFriends:${requesterId}:${searchTerm}`);
+            await this.redisClient.expire(`searchFriends:${requesterId}:${searchTerm}`, 3600);
             return searchFriendDto;
         } catch (error) {
             console.error("Error Searching Friends:", error);
@@ -317,23 +317,23 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ================================================================= Block and Unblocked Friend By friendId ================================================================= //
-    public async blockFriendById(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
+    public async blockFriendById(requesterId: number, addresseeId: number): Promise<FriendsResponseDto | null> {
         try {
-            if(!Number.isInteger(userId) || !Number.isInteger(friendId)){
+            if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)){
                 throw new Error("User ID and Friend ID must be valid numbers.");
             }
 
-            if(userId === friendId) {
+            if(requesterId === addresseeId) {
                 throw new Error("User cannot Block Your Self");
             }
             
-            const blockFriend = await this.friendsRepository.blockFriendById(userId, friendId);
+            const blockFriend = await this.friendsRepository.blockFriendById(requesterId, addresseeId);
             if(!blockFriend) {
                 throw new Error("Failed to block friend. No existing friend found.");
             }
             const blockFriendDto = this.friendsAutoMapper.mapToDto(blockFriend);
-            await this.redisClient.del(`blockFriend:${userId}:${friendId}`);
-            await this.redisClient.expire(`blockFriend:${userId}:${friendId}`, 3600);
+            await this.redisClient.del(`blockFriend:${requesterId}:${addresseeId}`);
+            await this.redisClient.expire(`blockFriend:${requesterId}:${addresseeId}`, 3600);
             return blockFriendDto;
         } catch (error) {
             console.error("Error Blocking Friend:", error);
@@ -341,19 +341,19 @@ export default class FriendsServices implements FriendsServicesInterface {
         }
     }
 
-    public async unblockFriendById(userId: number, friendId: number): Promise<FriendsResponseDto | null> {
+    public async unblockFriendById(requesterId: number, addresseeId: number): Promise<FriendsResponseDto | null> {
         try {
-            if(!Number.isInteger(userId) || !Number.isInteger(friendId)) {
+            if(!Number.isInteger(requesterId) || !Number.isInteger(addresseeId)) {
                 throw new Error("User ID and Friend ID must be valid numbers.");
             }
 
-            const unblockFriend = await this.friendsRepository.unblockFriendById(userId, friendId);
+            const unblockFriend = await this.friendsRepository.unblockFriendById(requesterId, addresseeId);
             if(!unblockFriend) {
                 throw new Error("Failed to unblock friend. No existing friend found.");
             }
             const unblockFriendDto = this.friendsAutoMapper.mapToDto(unblockFriend);
-            await this.redisClient.del(`unblockFriend:${userId}:${friendId}`);
-            await this.redisClient.expire(`unblockFriend:${userId}:${friendId}`, 3600);
+            await this.redisClient.del(`unblockFriend:${requesterId}:${addresseeId}`);
+            await this.redisClient.expire(`unblockFriend:${requesterId}:${addresseeId}`, 3600);
             return unblockFriendDto;
         } catch (error) {
             console.error("Error Unblocking Friend:", error);
@@ -363,13 +363,13 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================================================= Count and Metrics of Friends ================================================================//
-    public async countFriendsByUserId(userId: number): Promise<number> {
+    public async countFriendsByUserId(requesterId: number): Promise<number> {
         try {
-            if(!Number.isInteger(userId)) {
-                throw new Error(`User ID must be a valid number. User ID: ${userId}`);
+            if(!Number.isInteger(requesterId)) {
+                throw new Error(`User ID must be a valid number. User ID: ${requesterId}`);
             }
 
-            const countFriend = await this.friendsRepository.countFriendsByUserId(userId);
+            const countFriend = await this.friendsRepository.countFriendsByUserId(requesterId);
             if(!countFriend) {
                 throw new Error("Failed to count friends. No existing friends found.");
             }
@@ -381,13 +381,13 @@ export default class FriendsServices implements FriendsServicesInterface {
         }
     }
 
-    public async countPendingFriendRequestsByUserId(userId: number): Promise<number> {
+    public async countPendingFriendRequestsByUserId(requesterId: number): Promise<number> {
         try {
-            if(!Number.isInteger(userId)) {
-                throw new Error(`User ID must be a valid number. User ID: ${userId}`);
+            if(!Number.isInteger(requesterId)) {
+                throw new Error(`User ID must be a valid number. User ID: ${requesterId}`);
             }
 
-            const countPendingFriendRequest = await this.friendsRepository.countPendingFriendRequestsByUserId(userId);
+            const countPendingFriendRequest = await this.friendsRepository.countPendingFriendRequestsByUserId(requesterId);
             if(!countPendingFriendRequest) {
                 throw new Error("Failed to count pending friend requests. No existing pending friend requests found.");
             }
@@ -402,20 +402,20 @@ export default class FriendsServices implements FriendsServicesInterface {
 
 
     // ============================================================== Get Mutual Friends Between Two Users ============================================================== //
-    public async getMutualFriendsBetweenUsers(userId: number, otherUserId: number): Promise<FriendsResponseDto[] | null> {
+    public async getMutualFriendsBetweenUsers(requesterId: number, otherUserId: number): Promise<FriendsResponseDto[] | null> {
         try {
-            if(!Number.isInteger(userId) || !Number.isInteger(otherUserId)) {
+            if(!Number.isInteger(requesterId) || !Number.isInteger(otherUserId)) {
                 throw new Error("User ID and Other User ID must be valid numbers.");
             }
 
-            const mutualFriend = await this.friendsRepository.getMutualFriendsBetweenUsers(userId, otherUserId);
+            const mutualFriend = await this.friendsRepository.getMutualFriendsBetweenUsers(requesterId, otherUserId);
             if(!mutualFriend || mutualFriend.length === 0) {
                 throw new Error("Failed to get mutual friends. No existing mutual friends found.");
             }
 
             const mutualFriendDto = this.friendsAutoMapper.mapToDtoList(mutualFriend);
-            await this.redisClient.del(`mutualFriends:${userId}:${otherUserId}`);
-            await this.redisClient.expire(`mutualFriends:${userId}:${otherUserId}`, 3600);
+            await this.redisClient.del(`mutualFriends:${requesterId}:${otherUserId}`);
+            await this.redisClient.expire(`mutualFriends:${requesterId}:${otherUserId}`, 3600);
             return mutualFriendDto;
         } catch (error) {
             console.error("Error Getting Mutual Friends:", error);
