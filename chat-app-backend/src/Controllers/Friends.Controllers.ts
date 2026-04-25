@@ -554,6 +554,27 @@ export default class FriendsControllers {
     // ====================================== Get Mutual Friends Between Users Controllers ========================================== //
     public async getMutualFriendsBetweenUsersController(req: Request, res: Response) : Promise<Response | null> {
         try {
+            const  { requesterId, otherUserId} = req.query;
+            if(!requesterId || !otherUserId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "RequesterId and OtherUserId are Required"
+                });
+            }
+
+            const result = await this.friendServices.getMutualFriendsBetweenUsers(parseInt(requesterId as string), parseInt(otherUserId as string));
+            if(!result) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Failed to Get Mutual Friends Between Users"
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Mutual Friends Between Users Retrieved Successfully",
+                data: result
+            });
 
         } catch (error: any) {
             console.error("Error Getting Mutual Friends Between Users:", error.message);
@@ -562,6 +583,86 @@ export default class FriendsControllers {
                 message: error.message
             });
         }
-    } 
+    }
+
+
+    // ====================================== Get Suggested Friends By User ID Controller =============================================================== //
+    public async getSuggestedFriendsByUserIdController(req: Request, res: Response) : Promise<Response | null> {
+        try {
+            const {requesterId, otherUserId} = req.query;
+            if(!requesterId || !otherUserId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "RequesterId and OtherUserId are Required"
+                });
+            }
+
+            const result = await this.friendServices.getSuggestedFriendsByUserId(parseInt(requesterId as string), parseInt(otherUserId as string));
+            if(!result) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Failed to Get Suggested Friends By User ID"
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Suggested Friends By User ID Retrieved Successfully",
+                data: result
+            });
+        } catch (error: any) {
+            console.error("Error in Get Suggested Friends By User ID Controller:", error.message);
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
+
+    // ========================================== Get FriendShip History By RequesterId And AddresseeId Controller =============================================================== //
+    public async getFriendShipHistoryByRequesterIdAndAddresseeIdController(req: Request, res: Response) : Promise<Response | null> {
+        try {
+            const {requesterId, addresseeId} = req.query;
+            if(!requesterId || !addresseeId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "RequesterID and AddresseeID are Required"
+                });
+            }
+
+            const requesterIdNum = parseInt(String(requesterId));
+            const addresseeIdNum = parseInt(String(addresseeId));
+
+            if(Number.isNaN(requesterIdNum) || Number.isNaN(addresseeIdNum)) {
+                return res.status(403).json({
+                    success: false,
+                    message: "RequesterID and AddresseeID must be Valid Numbers"
+                });
+            }
+
+
+            const result = await this.friendServices.getFriendshipHistoryByUserId(requesterIdNum, addresseeIdNum);
+            if(!result) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Failed to Get FriendShip History By RequesterID and AddresseeID"
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "FriendShip History By RequesterID and AddresseeId Retrieved Successfully",
+                data: result
+            });
+
+        } catch (error: any) {
+            console.error("Error in Getting FriendShip History By RequesterId And AddresseeId Controller:", error.message);
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
 
 }

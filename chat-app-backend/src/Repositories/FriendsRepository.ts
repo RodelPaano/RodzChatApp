@@ -275,6 +275,32 @@ export default class FriendsRepository implements FriendsRepositoryInterface {
         )): null;
     }
 
+    async getFriendByRequesterId(requesterId: number) : Promise<Friends[] | null> {
+        const query = 'SELECT * FROM friends WHERE requesterId = $1';
+        const values = [requesterId];
+
+        const result = await this.pg.query(query, values);
+        return result.rows.length > 0 ? result.rows : null;
+    }
+
+
+    async getFriendByAddresseeId(addresseeId: number) : Promise<Friends[] | null> {
+        const query = 'SELECT * FROM friends WHERE addresseeId = $1';
+        const values = [addresseeId];
+
+        const result = await this.pg.query(query, values);
+        return result.rows.length > 0 ? result.rows : null;
+    }
+
+    // =============================== Find Block RelationShip Repository =============================  //
+    async findBlockRelationship(requesterId: number, addresseeId: number) : Promise< | null> {
+        const query = `SELECT * FROM friends WHERE ((requesterId = $1 AND addresseeId = $2) OR (requesterId = $2 AND addresseeId = $1)) AND status = 'Blocked' LIMIT 1`;
+
+        const values = [requesterId, addresseeId];
+
+        const result = await this.pg.query(query, values);
+        return result.rows.length > 0 ? result.rows[0] : null;
+    }
     //  =============================================== MORE FEATURES ADD HERE ================================================================//
 
 }
