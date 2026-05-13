@@ -1,3 +1,5 @@
+import { ActiveStatus, StatusMode } from "./Friends";
+
 export default class Users {
     id!: number; // Primary Key
 
@@ -34,6 +36,12 @@ export default class Users {
     friends!: number[];
     blockedUsers!: number[];
 
+    // for Active status and Status Mode
+    activeStatus : ActiveStatus;
+    statusMode : StatusMode;
+    lastActiveAt : Date;
+    expiresAt: Date | null;
+
     // Preferences Theme or Languages, Notification
     preferences!: Record<string, any>;
 
@@ -62,6 +70,10 @@ export default class Users {
         country: string,
         isOnline: boolean,
         statusMessage: MessageStatus,
+        activeStatus: ActiveStatus,
+        statusMode: StatusMode,
+        lastActiveAt: Date,
+        expiresAt: Date | null,
         lastSeen: Date,
         lastLogin: Date,
         friends: number[],
@@ -90,6 +102,10 @@ export default class Users {
         this.country = country;
         this.isOnline = isOnline;
         this.statusMessage = statusMessage;
+        this.activeStatus = activeStatus;
+        this.statusMode = statusMode;
+        this.lastActiveAt = lastActiveAt;
+        this.expiresAt = expiresAt;
         this.lastSeen = lastSeen;
         this.lastLogin = lastLogin;
         this.friends = friends;

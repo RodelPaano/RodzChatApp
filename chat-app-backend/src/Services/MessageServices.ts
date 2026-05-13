@@ -3,6 +3,7 @@ import { MessagesAutoMapperInterface } from "../Interfaces/MessagesInterfaces";
 import { MessageStatus } from "../Models/User";
 import MessagesResponseDto from "../Dtos/MessagesDto";
 import MessagesRepository from "../Repositories/MessageRepository";
+import  FriendsRepository  from "../Repositories/FriendsRepository";
 import { redisClient as redisClient } from "../Config/redis_connection";
 import Messages from "../Models/Messages";
 import { Media } from "../Models/Rooms";
@@ -10,10 +11,12 @@ import { Media } from "../Models/Rooms";
 export default class MessageServices implements MessageServicesInterface {
     private messagesRepository: MessagesRepository;
     private messagesAutoMapper: MessagesAutoMapperInterface;
+    private friendsRepository: FriendsRepository;
     private redisClient = redisClient;
-    constructor(messagesRepository: MessagesRepository, messagesAutoMapper: MessagesAutoMapperInterface) {
+    constructor(messagesRepository: MessagesRepository, friendsRepository: FriendsRepository, messagesAutoMapper: MessagesAutoMapperInterface) {
         this.messagesRepository = messagesRepository;
         this.messagesAutoMapper = messagesAutoMapper;
+        this.friendsRepository = friendsRepository;
     }
 
 
@@ -28,20 +31,23 @@ export default class MessageServices implements MessageServicesInterface {
                 throw new Error("Message is required.");
             }
 
-            const sendMessage = await this.messagesRepository.sendMessage(senderId, receiverId, message, mediaFile );
-            if(!sendMessage) {
-                throw new Error("Failed to Send Message to Your Friend");
+            // ====== Check if the Receiver is Blocked By Sender or Not Before Sending Message ====== //
+            const isBlocked = await this.friendsRepository.findBlockRelationship(senderId, receiverId);
+            if(!isBlocked) {
+                throw new Error("You Cannot Send Message to This User Because You Are Blocked By Him/Her");
             }
+
+            const sendMessage = await this.messagesRepository.sendMessage(senderId, receiverId, message, mediaFile );
             if(!sendMessage.senderId || !sendMessage.receiverId) {
                 throw new Error("Failed to Send Message to Your Friend");
             }
 
             const messageDto = this.messagesAutoMapper.mapToDto(sendMessage);
 
-            await this.redisClient.del(`messages:${senderId}`)
-            await this.redisClient.expire(`messages:${senderId}`, 3600);
-            await this.redisClient.del(`messages:${receiverId}`)
-            await this.redisClient.expire(`messages:${receiverId}`, 3600);
+            await Promise.all([
+                this.redisClient.del(`messages:${senderId}`),
+                this.redisClient.del(`messages:${receiverId}`)
+            ]);
 
             return messageDto;
 
@@ -52,30 +58,57 @@ export default class MessageServices implements MessageServicesInterface {
     }
 
 
-    public async sendMultipleMessagesToAllFriends(senderId: number, receiverId: number[], message: Messages, mediaFile: Media[]): Promise<MessagesResponseDto[]> {
+    public async sendMultipleMessagesToAllFriends(senderId: number, receiverIds: number[], message: Messages, mediaFile: Media[]): Promise<{sent: MessagesResponseDto[];blocked: number[];failed: number[];}> {
         try {
-            if(!Number.isInteger(senderId) || !Array.isArray(receiverId)) {
+            if(!Number.isInteger(senderId) || !Array.isArray(receiverIds)) {
                 throw new Error("Sender ID and Receiver IDs must be valid.");
             }
 
             if(!message || !message.message) {
                 throw new Error("Message is required.");
             }
-            const sendMultipleMessagesToAllFriends = await this.messagesRepository.sendMultipleMessagesToAllFriends(senderId, receiverId, message, mediaFile);
-            if(!sendMultipleMessagesToAllFriends || sendMultipleMessagesToAllFriends.length === 0) {
-                throw new Error("Failed to Send Message to Your Friends");
-            }
 
-            const messageDtos = sendMultipleMessagesToAllFriends.map(msg => this.messagesAutoMapper.mapToDto(msg));
+            const blockedReceiverIds = await this.friendsRepository.findBlockRelationship(senderId, receiverIds);
 
-            await this.redisClient.del(`messages:${senderId}`);
-            await this.redisClient.expire(`messages:${senderId}`, 3600);
-            receiverId.forEach(async (id) => {
-                await this.redisClient.del(`messages:${id}`);
-                await this.redisClient.expire(`messages:${id}`, 3600);
-            });
+            const allowedReceiverIds = receiverIds.filter((id) => !(blockedReceiverIds as unknown as number[]).includes(id));
+            const sent: MessagesResponseDto[] = [];
+            const failed: number[] = [];
 
-            return messageDtos;
+            await Promise.all(
+                allowedReceiverIds.map(async (receiverId) => {
+                    const sentMessage = await this.messagesRepository
+                        .sendMultipleMessagesToAllFriends(
+                            senderId,
+                            [receiverId],    // ✅ Fixed: allowedReceiverIds na, diri receiverIds
+                            message,
+                            mediaFile
+                        ).catch(() => {
+                            failed.push(receiverId);
+                            return null;
+                        });
+
+                    if (!sentMessage || sentMessage.length === 0) {
+                        failed.push(receiverId);
+                        return;
+                    }
+
+                    const dto = this.messagesAutoMapper.mapToDto(sentMessage[0]);
+                    sent.push(dto);
+                })
+            );
+
+            await Promise.all([
+                this.redisClient.del(`messages:${senderId}`),
+                ...allowedReceiverIds.map((id) =>
+                    this.redisClient.del(`messages:${id}`)  // ✅ Fixed: del la, waray expire
+                ),
+            ]);
+
+            return {
+                sent,
+                blocked: blockedReceiverIds as unknown as number[],
+                failed,
+            };
         } catch (error) {
             console.error("Error Sending Multiple Messages:", error);
             throw error;

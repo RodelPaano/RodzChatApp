@@ -24,10 +24,24 @@ export default class FriendsServices implements FriendsServicesInterface {
                 throw new Error(`Requester ID and Addressee ID must be valid numbers. Requester ID: ${requesterId}, Addressee ID: ${addresseeId}`);
             }
 
+            if(requesterId <= 0 || addresseeId <= 0) {
+                throw new Error("Requester ID and Addressee ID must be Positive Integer");
+            }
+
+            if(requesterId === addresseeId) {
+                throw new Error("User cannot send Friend Request to Your Self");
+            }
+
             if(!createdAt || !(createdAt instanceof Date) || isNaN(createdAt.getTime())) {
                 throw new Error(`Created At must be a valid date. Created At: ${createdAt}`);
             }
 
+            // ============ Validation Duplication Friend Request and Existing Friendship ============ //
+            const existingFriendship = await this.friendsRepository.findFriendshipStatus(requesterId, addresseeId);
+            if(existingFriendship) {
+                throw new Error(`Cannot send friend request. Current status: ${getFriendshipMessage(existingFriendship.status)}`);
+            }
+            
             const friend = await this.friendsRepository.addFriend(requesterId, addresseeId, createdAt);
             if(!friend || friend.status !== FriendShipStatus.Pending){
                 throw new Error(`Failed to send friend request. Current status: ${getFriendshipMessage(friend?.status ?? FriendShipStatus.Blocked)}`);
@@ -35,10 +49,10 @@ export default class FriendsServices implements FriendsServicesInterface {
             
             const friendDto = this.friendsAutoMapper.mapToDto(friend);
 
-            await this.redisClient.del(`friends:${requesterId}`)
-            await this.redisClient.expire(`friends:${requesterId}`, 3600);
-            await this.redisClient.del(`friends:${addresseeId}`)
-            await this.redisClient.expire(`friends:${addresseeId}`, 3600);
+            await Promise.all([
+                this.redisClient.del(`friends:${requesterId}`),
+                this.redisClient.del(`friends:${addresseeId}`),
+            ]);
 
             return friendDto;
         } catch (error) {
@@ -55,17 +69,31 @@ export default class FriendsServices implements FriendsServicesInterface {
                 throw new Error("User ID and Friend ID must be valid numbers.");
             }
 
+            if(requesterId <= 0 || addresseeId <= 0) {
+                throw new Error("Requester ID and Addressee ID must be Positive Integers.");
+            }
+
+            // ======== Check Before Deleting ======= //
+            const existing = await this.friendsRepository.findFriendshipStatus(requesterId, addresseeId);
+            if(!existing) {
+                throw new Error("Failed to Remove. No existing Friend Request");
+            }
+
+            if(existing.status === FriendShipStatus.Accepted) {
+                throw new Error(`Cannot Remove Friend. You are currently friends. Please Unfriend instead.`);
+            }
+
             const removeFriend = await this.friendsRepository.HardDeleteFriendRequest(requesterId, addresseeId);
             if(!removeFriend ){
                 throw new Error("Failed to remove friend. No Existing Friend Relationship Found.");
             }
-            if(removeFriend.status === FriendShipStatus.Accepted){
-                throw new Error("Cannot remove friend. You are currently friends. Please unfriend instead.");
-            }
+            
             const removeFriendDto = this.friendsAutoMapper.mapToDto(removeFriend);
 
-            await this.redisClient.del(`friends:${requesterId}`)
-            await this.redisClient.expire(`friends:${addresseeId}`, 3600);
+            await Promise.all([
+                this.redisClient.del(`friends:${requesterId}`),
+                this.redisClient.del(`friends:${addresseeId}`)
+            ]);
 
             return removeFriendDto;
         } catch (error) {
@@ -82,20 +110,52 @@ export default class FriendsServices implements FriendsServicesInterface {
                 throw new Error(`Requester ID and Addressee ID must be Valid Numbers. Requester ID: ${requesterId}, Addressee ID: ${addresseeId}`);
             }
 
+            if(requesterId <= 0 || addresseeId <= 0) {
+                throw new Error("Requester ID and Addressee ID must be Positive Integers.");
+            };
+
+            if(requesterId === addresseeId) {
+                throw new Error("Requester ID and Addressee ID cannot be the same.");
+            }
+
             if(!deletedAt || !(deletedAt instanceof Date) || isNaN(deletedAt.getDate())) {
                 throw new Error(`Deleted At must be a valid date. Deleted At: ${deletedAt}`);
             }
 
+            // ====== Check if the Friend Request is already Soft Deleted ====== //
+            const existingSoftDelete = await this.friendsRepository.findFriendshipStatus(requesterId, addresseeId);
+            if(!existingSoftDelete) {
+                throw new Error("Failed to delete friend request. No existing friend request from requester to addressee or friend request is already deleted.");
+            }
+
+            if(existingSoftDelete.status === FriendShipStatus.Accepted) {
+                throw new Error("Failed to delete friend request. You are currently friends. Please Unfriend instead.");
+            }
+
+            if(existingSoftDelete.status === FriendShipStatus.Blocked) {
+                throw new Error("Failed to delete friend request. You are currently blocked. Please Unblock instead.");
+            }
+
+            if(existingSoftDelete.status === FriendShipStatus.Rejected) {
+                throw new Error("Failed to delete friend request. You have already rejected this friend request.");
+            }
+
+            if(existingSoftDelete.deletedAt && existingSoftDelete.deletedAt.getTime() === deletedAt.getTime()) {
+                throw new Error("Failed to delete friend request. This friend request has already been deleted.");
+            }
+
             const softDeleteFriendRequest = await this.friendsRepository.softDeleteFriendRequest(requesterId, addresseeId, deletedAt);
-            if(!softDeleteFriendRequest || softDeleteFriendRequest.status !== FriendShipStatus.Pending) {
-                throw new Error(`Failed to delete friend request. Current status: ${getFriendshipMessage(softDeleteFriendRequest?.status ?? FriendShipStatus.Blocked)}`);
+            if(!softDeleteFriendRequest) {
+                throw new Error("Failed to delete Friend Request. No existing friend request from requester to addressee or friend request is already deleted.");
             }
 
             const softDeleteFriendRequestDto = this.friendsAutoMapper.mapToDto(softDeleteFriendRequest);
-            await this.redisClient.del(`friendRequests:${requesterId}:${addresseeId}`);
-            await this.redisClient.expire(`friendRequests:${requesterId}:${addresseeId}`, 3600);
-            await this.redisClient.del(`friendRequests:${addresseeId}:${requesterId}`);
-            await this.redisClient.expire(`friendRequests:${addresseeId}:${requesterId}`, 3600);
+
+            await Promise.all([
+                this.redisClient.del(`fiends:${requesterId}`),
+                this.redisClient.del(`friends:${addresseeId}`)
+            ]);
+
             return softDeleteFriendRequestDto;
 
         } catch (error) {

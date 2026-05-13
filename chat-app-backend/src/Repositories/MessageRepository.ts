@@ -16,41 +16,97 @@
             const savedMessage = result.rows[0];
 
             // Save Media File to the Postgres Database
+            const savedMedia: Media[] = [];
+
             for (const media of mediaFile) {
-                const mediaQuery = 'INSERT INTO media (messageId, type, url, updatedAt, uploadedBy) VALUES ($1, $2, $3, $4, $5)';
-                const mediaValues = [savedMessage.id, media.type, media.url, media.uploadedAt || new Date(), media.uploadedBy];
-                await this.pg.query(mediaQuery, mediaValues);
+
+                const mediaQuery = `INSERT INTO media (
+                messageId,
+                type,
+                url,
+                uploadedAt,
+                uploadedBy)
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING * `;
+
+                const mediaValues = [
+                    savedMessage.id,
+                    media.type,
+                    media.url,
+                    media.uploadedAt || new Date(),
+                    media.uploadedBy
+                ];
+
+
+                const mediaResult = await this.pg.query(mediaQuery, mediaValues);
+
+                const savedMediaFile = mediaResult.rows[0];
+
+                savedMedia.push(savedMediaFile);
             }
-            return savedMessage;
+
+            return {
+                ...savedMessage,
+                media:savedMedia
+            }
         }
 
         // ===================================================== Send Multiple Message to All Friends ==================================================================================================== //
-        async sendMultipleMessagesToAllFriends(senderId: number, receiverIds: number[], message: Messages, mediaFile: Media[]): Promise<Messages[]> {
+        async sendMultipleMessagesToAllFriends(senderId: number, receiverIds: number[], message: Messages, mediaFile: Media[]): Promise<{sent: Messages[];blocked: number[];failed: number}> {
             
-            const results: Messages[] = [];
+            const sent: Messages[] = [];
+            let failedCount = 0;
 
-            for (const receiver of receiverIds) {
-                const query = `INSERT INTO messages (senderId, receiver, message, media, createdAt) VALUES ($1, $2, $3, $4, $5) RETURNING *`;
-                const values  = [senderId, receiver, message.message, message.media, message.createdAt || new Date()];
+            for (const receiverId of receiverIds) {
+                try {
+                    // ── Insert Message ────────────────────────────────────────
+                    const query = `
+                        INSERT INTO messages (senderId, receiverId, message, createdAt) 
+                        VALUES ($1, $2, $3, $4) 
+                        RETURNING *
+                    `;
+                    const values = [
+                        senderId,
+                        receiverId,
+                        message.message,
+                        message.createdAt || new Date()
+                    ];
 
-                const result = await this.pg.query(query, values);
-                const savedMessage = result.rows[0];
-                results.push(savedMessage);
-            
+                    const result = await this.pg.query(query, values);
+                    const savedMessage: Messages = result.rows[0];
 
-            // Save Media File to the Postgres Database// Insert media attachments for this specific message
-            for (const media of mediaFile) {
-                const mediaQuery = `
-                    INSERT INTO media (messageId, type, url, uploadedAt, uploadedBy) 
-                    VALUES ($1, $2, $3, $4, $5)
-                `;
-                const mediaValues = [savedMessage.id, media.type, media.url, media.uploadedAt || new Date(), media.uploadedBy];
-                await this.pg.query(mediaQuery, mediaValues);
+                    // ── Insert Media Per Message ───────────────────────────────
+                    if (mediaFile && mediaFile.length > 0) {
+                        for (const media of mediaFile) {
+                            const mediaQuery = `
+                                INSERT INTO media (messageId, type, url, uploadedAt, uploadedBy) 
+                                VALUES ($1, $2, $3, $4, $5)
+                            `;
+                            const mediaValues = [
+                                savedMessage.id,
+                                media.type,
+                                media.url,
+                                media.uploadedAt || new Date(),
+                                media.uploadedBy
+                            ];
+                            await this.pg.query(mediaQuery, mediaValues);
+                        }
+                    }
+
+                    sent.push(savedMessage);  // ✅ Push after success
+
+                } catch (error) {
+                    
+                    failedCount++;
+                    console.error(`Failed to send message to receiver ${receiverId}:`, error);
+                }
             }
 
-        }
-
-        return results;
+            return {
+                sent,
+                blocked: [],  // ← block check is handled in service layer na
+                failed: failedCount,
+            };
     }
 
 
@@ -64,12 +120,39 @@
             const savedMessage = result.rows[0];
 
             // Save Media File to the Postgres Database
+            const savedMedia: Media[] = [];
+
+            // for Loop for saving or inserting Media
             for (const media of mediaFile) {
-                const mediaQuery = 'INSERT INTO media (messageId, type, url, updatedAt, uploadedBy) VALUES ($1, $2, $3, $4, $5)';
-                const mediaValues = [savedMessage.id, media.type, media.url, media.uploadedAt || new Date(), media.uploadedBy];
-                await this.pg.query(mediaQuery, mediaValues);
+
+                const mediaQuery = `INSERT INTO media (
+                messageId,
+                type,
+                url,
+                uploadedAt,
+                uploadedBy
+                ) VALUES ($1, $2, $3, $4, $5) 
+                 RETURNING * `;
+
+                 const mediaValues  = [
+                    savedMessage.id,
+                    media.type,
+                    media.url,
+                    media.uploadedAt || new Date(),
+                    media.uploadedBy
+                 ];
+                  const mediaResult = await this.pg.query(mediaQuery, mediaValues);
+
+                  const savedMediaFile = mediaResult.rows[0];
+
+                  savedMedia.push(savedMediaFile);
             }
-            return savedMessage;
+
+            // Returning saved Message With Media File
+            return {
+                ...savedMessage,
+                media: savedMedia
+            };
 
         }
 
@@ -83,13 +166,39 @@
             const savedMessage = result.rows[0];
 
             // Save Media File to the Postgres Database
-            for (const media of mediaFile) {
-                const mediaQuery = 'INSERT INTO media (messageId, type, url, updatedAt, uploadedBy) VALUES ($1, $2, $3, $4, $5)';
-                const mediaValues = [savedMessage.id, media.type, media.url, media.uploadedAt || new Date(), media.uploadedBy];
-                await this.pg.query(mediaQuery, mediaValues);
-            }
-            return savedMessage;
+            const savedMedia: Media[] = [];
 
+            for (const media of mediaFile) {
+
+                const mediaQuery = `INSERT INTO media (
+                messageId,
+                type,
+                url,
+                uploadedAt,
+                uploadedBy
+                ) VALUES ($1, $2, $3, $4, $5)
+                 RETURNING *`;
+
+                 const mediaValues = [
+                    savedMessage.id,
+                    media.type,
+                    media.url,
+                    media.uploadedAt || new Date(),
+                    media.uploadedBy
+                 ];
+
+                 const mediaResult = await this.pg.query(mediaQuery, mediaValues);
+
+                 const savedMediaFile = mediaResult.rows[0];
+
+                 savedMedia.push(savedMediaFile);
+            }
+
+            // Return Result Message With media
+            return {
+                ...savedMessage,
+                media: savedMedia
+            }
         }
 
         // ======================================================== Reply to Message From Room By Sender to Receivers ======================================================== //
@@ -102,12 +211,37 @@
             const savedMessage = result.rows[0];
 
             // Save Media File to the Postgres Database
+            const savedMedia: Media[] = [];
+
             for (const media of mediaFile) {
-                const mediaQuery = 'INSERT INTO media (messageId, type, url, updatedAt, uploadedBy) VALUES ($1, $2, $3, $4, $5)';
-                const mediaValues = [savedMessage.id, media.type, media.url, media.uploadedAt || new Date(), media.uploadedBy];
-                await this.pg.query(mediaQuery, mediaValues);
+                const mediaQuery = `INSERT INTO media (
+                messageId,
+                type,
+                url,
+                uploadedAt,
+                uploadedBy) 
+                VALUES ($1, $2, $3, $4, $) RETURNING *`;
+
+
+                const mediaValues = [
+                    savedMessage.id,                    
+                    media.type,
+                    media.url,
+                    media.uploadedAt || new Date(),
+                    media.uploadedBy
+                ]
+
+                const mediaResult = await this.pg.query(mediaQuery, mediaValues);
+
+                savedMedia.push(mediaResult.rows[0]);
+
             }
-            return savedMessage;
+            
+            return {
+                ...savedMessage,
+                media: savedMedia
+            }
+
         }
 
 
@@ -115,15 +249,25 @@
         async getMessageBySenderIdToReceiverId(id: number, senderId: number, receiverId: number, readAt: Date): Promise<(Messages & { media: Media[] }) | null> {
             // Get the message
             const query = 'SELECT * FROM messages WHERE id = $1 AND (senderId = $2 AND receiverId = $3 AND uploadedBy = $4, readAt = $5) OR (senderId = $3 AND receiverId = $2 AND uploadedBy = $4 readAt = $5)';
-            const result = await this.pg.query(query, [id, senderId, receiverId, readAt ] );
+            
+            const values = [id, senderId, receiverId, readAt];
+
+            const result = await this.pg.query(query, values);
+
             const message = result.rows[0];
-            if (!message) return null;
 
-            // Get all media linked to this message
-            const mediaQuery = 'SELECT * FROM media WHERE uploadedBy = $1';
-            const mediaResult = await this.pg.query(mediaQuery, [senderId]);
+            if(!message) {
+                return null;
+            }
 
-            // Combine message + media
+            const mediaQuery = `SELECT * FROM media WHERE messageId = $1 AND uploadedAt = $2`;
+
+            // Attach media per Message
+            const mediaResult = await this.pg.query(mediaQuery, 
+                [message.messageId, message.uploadedAt]
+            );
+
+            // Return Message With Media
             return {
                 ...message,
                 media: mediaResult.rows
@@ -131,60 +275,74 @@
         }
 
         // ========================================================= Get or Retrieve Message By Receiver ID ======================================================= //
-        async getMessagesByReceiverId(senderId: number, receiverId: number, readAt: Date, offset: number): Promise<(Messages[] & { media: Media[] }) [] > {
+        async getMessagesByReceiverId(senderId: number, receiverId: number, readAt: Date, offset: number): Promise<(Messages & { media: Media[] }) [] > {
             
             const query = `
             SELECT * FROM messages 
             WHERE receiverId = $1 AND senderId = $2 AND readAt < $3
             ORDER BY createdAt DESC 
-            LIMIT 10 OFFSET $3
+            LIMIT 10 OFFSET $4
             `;
             const values = [senderId, receiverId, readAt, offset];
             const result = await this.pg.query(query, values);
+            
+
+            const mediaQuery = `SELECT * FROM media WHERE messageId = $1 AND uploadedBy = $2`;
 
             // Attach media per message
-            const messagesWithMedia = await Promise.all(
-                result.rows.map(async (message: any) => {
-                    const mediaQuery = `SELECT * FROM media WHERE messageId = $1`;
-                    const mediaResult = await this.pg.query(mediaQuery, [message.messageId]);
-                    return {
-                        ...message,
-                        media: mediaResult.rows
-                    };
-                })
-            );
+            const messageWithMedia: (Messages & {media: Media[]}) [] = [];
 
-            return messagesWithMedia;
+            for (let i = 0; i < result.rows.length; i ++) {
+                const messages = result.rows[i];
+
+                const mediaResult = await this.pg.query(mediaQuery, 
+                    [messages.messageId, messages.uploadedBy]
+                );
+
+                messageWithMedia.push({
+                    ...messages,
+                    media: mediaResult.rows
+                })
+            }
+
+            return messageWithMedia;
 
 
         }
 
 
         // ================================================== Get or Retrieve Message To Room or Group Chat By Sender ID ====================================================== //
-        async getMessagesByRoomIdOrGroupChat(roomId: number, senderId: number, receiverIds: number[], readAt: Date, offset: number): Promise<(Messages[] & { media: Media[] }) []> {
+        async getMessagesByRoomIdOrGroupChat(roomId: number, senderId: number, receiverIds: number[], readAt: Date, offset: number): Promise<(Messages & { media: Media[] }) []> {
             
             const query = `
             SELECT * FROM messages 
             WHERE roomId = $1 AND senderId = $2 AND uploadedBy = $3 AND readAt < $4
             ORDER BY createdAt DESC 
-            LIMIT 10 OFFSET $3
+            LIMIT 10 OFFSET $5
             `;
             const values = [roomId, senderId, receiverIds, readAt, offset];
             const result = await this.pg.query(query, values);
 
-            // Attach media per message
-            const messagesWithMedia = await Promise.all(
-                result.rows.map(async (message: any) => {
-                    const mediaQuery = `SELECT * FROM media WHERE uploadedBy = $1`;
-                    const mediaResult = await this.pg.query(mediaQuery, [message.messageId]);
-                    return {
-                        ...message,
-                        media: mediaResult.rows
-                    };
-                })
-            );
+            // Saved Media per Message
+            const mediaQuery = `SELECT * FROM media WHERE messageId = $1 AND uploadedBy = $2`;
 
-            return messagesWithMedia;
+            const messageWithMedia: (Messages & {media: Media[]}) [] = [];
+
+            for (let i = 0; i < result.rows.length; i ++) {
+                const messages = result.rows[i];
+
+                const mediaResult = await this.pg.query(mediaQuery, 
+                    [messages.messageId, messages.uploadedBy]
+                );
+
+                messageWithMedia.push({
+                    ...messages,
+                    media: mediaResult.rows
+                });
+            }
+
+            return messageWithMedia;
+
         }
 
 

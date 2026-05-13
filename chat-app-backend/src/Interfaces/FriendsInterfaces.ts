@@ -1,5 +1,5 @@
 import FriendsResponseDto from "../Dtos/FriendsDto";
-import { Friends, FriendShipStatus } from "../Models/Friends";
+import { Friends, FriendShipStatus, OnlineFriends } from "../Models/Friends";
 
 export interface FriendsAutoMapperInterface {
     mapToModel (model: FriendsResponseDto) : Friends;
@@ -25,7 +25,6 @@ export interface FriendsRepositoryInterface {
 
     // Get Friends List By User id
     getFriendsListByRequesterId(requesterId: number, status: FriendShipStatus, friendAt: Date) : Promise<Friends[] | null>;
-    getFriendshipStatus(requesterId: number, addresseeId: number) : Promise<Friends | null>;
     getFriendshipStatusByList(requesterId: number, addresseeId: number, statusList: FriendShipStatus[], friendAt: Date) : Promise<Friends[] | null>;
     
     // Get Friend Requests By User Id
@@ -54,6 +53,46 @@ export interface FriendsRepositoryInterface {
 
     // Get History of Friend and Audit loginUserAccount
     getFriendshipHistoryByRequesterId(requesterId: number, addresseeId: number) : Promise<Friends[] | null>;
+
+    // Get Friend By Requester ID
+    getFriendByRequesterId(requesterId: number) : Promise<Friends[] | null>;
+
+    // Get Friend By Addressee ID 
+    getFriendByAddresseeId(addresseeId: number) : Promise<Friends[] | null>;
+
+    // Find Block RelationShip
+    findBlockRelationship(requesterId: number, addresseeId: number | number[]) : Promise<Friends | number[] | null>;
+
+    // Find FriendShipStatus
+    findFriendshipStatus(requesterId: number, addresseeId: number) : Promise<Friends | null>;
+
+    // Find findFriendRelationship
+    findFriendRelationship(requesterId: number, addresseeId: number) : Promise<Friends | null>;
+
+    // Find Blocked Friends List
+    getBlockedFriendsList(requesterId: number, status: FriendShipStatus ) : Promise<Friends[] | null>;
+
+    // Get Pending Friend Requests Received
+    getPendingFriendRequestsReceived(addresseeId: number, status: FriendShipStatus) : Promise<Friends[] | null>;
+
+    // Get Pending Friend Requests Sent
+    getPendingFriendRequestsSent(requesterId: number, status: FriendShipStatus) : Promise<Friends[] | null>;
+
+    // Get Friend With Pagination Where Status is Accepted
+    getFriendsListWithPagination(requesterId: number, offset: number, limit: number, status: FriendShipStatus) : Promise<{friends: Friends[]; total: number} | null>;
+    
+    // Count Block User or Friend By ID
+    countBlockedUserByRequesterId(requesterId: number, status: FriendShipStatus) : Promise<number>;
+
+    // Count Mutual Friends
+    countMutualFriends(requesterId: number, otherUserId: number, status: FriendShipStatus) : Promise<number>;
+
+    // Check If Friends 
+    checkIfFriends(requesterId: number, addresseeId: number, status: FriendShipStatus) : Promise<boolean>;
+
+    // Get Only Online Friends
+    getOnlineFriends(requesterId: number) : Promise<OnlineFriends[] | null>;
+
 }
 
 export interface FriendsServicesInterface {
@@ -100,5 +139,7 @@ export interface FriendsServicesInterface {
     getSuggestedFriendsByUserId(requesterId: number, otherUserId: number) : Promise<FriendsResponseDto[] | null>;
 
     // Get History of Friend and Audit loginUserAccount
-    getFriendshipHistoryByUserId(requesterId: number, addresseeId: number) : Promise<FriendsResponseDto[] | null>;
+    getFriendshipHistoryByRequesterId(requesterId: number, addresseeId: number) : Promise<FriendsResponseDto[] | null>;
+
+    // 
 }  

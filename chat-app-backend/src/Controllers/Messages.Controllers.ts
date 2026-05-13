@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import MessageServices from "../Services/MessageServices";
+import { FriendShipStatus } from "../Models/Friends";
 
 export default class MessagesControllers {
     private messageServices : MessageServices;
@@ -8,36 +9,37 @@ export default class MessagesControllers {
     }
 
     // ==================================================== Create or Send Message To The Receiver or Friend =============================================================================== //
-    async sendMessage(req: Request, res: Response) : Promise<Response | null> {
+    public async sendMessage(req: Request, res: Response) : Promise<Response | null> {
         try {
-            const sendMessage = req.body;
-
-            const sendMessageResponse = await this.messageServices.sendMessage(
-                sendMessage.senderId, 
-                sendMessage.receiverId, 
-                sendMessage, 
-                sendMessage.mediaFile
-            );
-
-            if(!sendMessageResponse ) {
-                return res.status(400).json({
-                    success: false, 
-                    message: "Failed to send message"
+            const {senderId, receiverId, message, mediaFile } = req.body;
+            if(!senderId || !receiverId ) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid request Body for Sending Message to the Receiver or friend"
                 });
             }
 
-            return res.status(201).json({                success: true, 
+            const sendMessageResponse = await this.messageServices.sendMessage(senderId, receiverId, message, mediaFile);
+            if(!sendMessageResponse) {
+                return res.status(402).json({
+                    success: false,
+                    message: "Failed to send message to the receiver or Friend"
+                });
+            }
+            
+            return res.status(201).json({
+                success: true, 
                 data: sendMessageResponse, 
                 message: "Message Sent Successfully"
             });
-        
+         
         } catch (error: any) {
             return res.status(500).json({success: false, message: error.message});
         }
 
     }
 
-    async sendMultipleMessagesToAllFriends(req: Request, res: Response) : Promise<Response | null> {
+    public async sendMultipleMessagesToAllFriends(req: Request, res: Response) : Promise<Response | null> {
         try {
             const sendMultipleMessagesToAllFriends = req.body;
 
@@ -65,7 +67,7 @@ export default class MessagesControllers {
         }
     }
 
-    async sendMessageToRoom(req: Request, res: Response) : Promise<Response | null> {
+    public async sendMessageToRoom(req: Request, res: Response) : Promise<Response | null> {
         try {
             const sendMessageToRoom = req.body;
 
@@ -97,7 +99,7 @@ export default class MessagesControllers {
     }
 
     // ================================================ Reply to Message have Send from Receiver ============================================================ //
-    async replyToMessageFromReceiverToSender(req: Request, res: Response) : Promise<Response | null> {
+    public async replyToMessageFromReceiverToSender(req: Request, res: Response) : Promise<Response | null> {
         try {
             const replyToMessageFromReceiverToSender = req.body;
 
@@ -130,9 +132,15 @@ export default class MessagesControllers {
     }
 
 
-    async replyToMessageFromRoomBySenderToReceivers(req: Request, res: Response) : Promise<Response | null> {
+    public async replyToMessageFromRoomBySenderToReceivers(req: Request, res: Response) : Promise<Response | null> {
         try {
             const replyToMessageFromRoomBySenderToReceivers = req.body;
+            if(!replyToMessageFromRoomBySenderToReceivers) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid request body for replying to message from Room By Sender to Receivers"
+                });
+            }
 
             const replyToMessageFromRoomBySenderToReceiversResponse = await this.messageServices.replyToMessageFromRoomBySenderToReceivers(
                 replyToMessageFromRoomBySenderToReceivers.roomId, 
@@ -165,9 +173,15 @@ export default class MessagesControllers {
 
 
     // ==================================================== Read Message from sender to receiver =============================================================================== //
-    async getMessageBySenderIdToReceiverId(req: Request, res: Response) : Promise<Response | null> {
+    public async getMessageBySenderIdToReceiverId(req: Request, res: Response) : Promise<Response | null> {
         try {
             const getMessageBySenderIdToReceiverId = req.body;
+            if(!getMessageBySenderIdToReceiverId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid request Body for getting message from sender to receiver"
+                });
+            }
 
             const getMessageBySenderIdToReceiverIdResponse = await this.messageServices.getMessageBySenderIdToReceiverId(
                 getMessageBySenderIdToReceiverId.id, 
@@ -183,7 +197,7 @@ export default class MessagesControllers {
                 });
             }
 
-            return res.status(201).json({
+            return res.status(200).json({
                 success: true, 
                 data: getMessageBySenderIdToReceiverId, 
                 message: "Read Message From Sender Successfully"
@@ -196,7 +210,7 @@ export default class MessagesControllers {
         }
     }
 
-    async getMessageByReceiverId(req: Request, res: Response) : Promise<Response | null> {
+    public async getMessageByReceiverId(req: Request, res: Response) : Promise<Response | null> {
         try {
             const getMessageByReceiverId = req.body;
 
@@ -227,7 +241,7 @@ export default class MessagesControllers {
         } 
     }
 
-    async getMessagesByRoomIdOrGroupChat(req: Request, res: Response) : Promise<Response | null> {
+    public async getMessagesByRoomIdOrGroupChat(req: Request, res: Response) : Promise<Response | null> {
         try {
             const getMessagesByRoomIdOrGroupChat = req.body;
 
@@ -261,7 +275,7 @@ export default class MessagesControllers {
     }
 
     // ===================================================== Delete or Remove Message from the Friends ================================================================ //
-    async deleteOrRemoveMessageToUserOrFriendByMessageIdController(req: Request, res: Response) : Promise<Response | null> {
+    public async deleteOrRemoveMessageToUserOrFriendByMessageIdController(req: Request, res: Response) : Promise<Response | null> {
         try {
             const messageId = parseInt(req.params.messageId);
             const deleteOrRemoveMessageToUserOrFriendByMessageId = req.body;
@@ -297,7 +311,7 @@ export default class MessagesControllers {
         }
     }
 
-    async deleteOrRemoveMessageByRoomIdController(req: Request, res: Response) : Promise<Response | null> {
+    public async deleteOrRemoveMessageByRoomIdController(req: Request, res: Response) : Promise<Response | null> {
         try {
             const roomId = parseInt(req.params.roomId);
             const deleteOrRemoveMessageByRoomId = req.body
@@ -328,7 +342,7 @@ export default class MessagesControllers {
 
 
     // ================================================================== Update Message Controller ==================================================== //
-    async updateMessageByIdController(req:Request, res: Response) : Promise<Response | null> {
+    public async updateMessageByIdController(req:Request, res: Response) : Promise<Response | null> {
         try {
 
             const id = parseInt(req.params.id);
@@ -363,7 +377,7 @@ export default class MessagesControllers {
     }
 
 
-    async updateMessageByRoomId(req: Request, res: Response) : Promise<Response | null> {
+    public async updateMessageByRoomId(req: Request, res: Response) : Promise<Response | null> {
         try {
             const roomId = parseInt(req.params.roomId);
             const id = parseInt(req.params.id);

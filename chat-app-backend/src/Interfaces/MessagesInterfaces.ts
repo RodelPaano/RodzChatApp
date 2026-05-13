@@ -10,7 +10,7 @@ export  interface MessagesAutoMapperInterface {
 export interface MessagesRepositoryInterface {
     // Send an Message Post to the database and send back the Message Model
     sendMessage( senderId: number, receiverId: number, message: Messages, mediaFile: Media[] ) : Promise<Messages>;
-    sendMultipleMessagesToAllFriends( senderId: number, receiverId: number[], message: Messages, mediaFile: Media[]) : Promise<Messages[]>;
+    sendMultipleMessagesToAllFriends( senderId: number, receiverId: number[], message: Messages, mediaFile: Media[]) : Promise<{sent: Messages[];blocked: number[];failed: number}>;
     sendMessageToRoom(roomId: number,  senderId: number, message: Messages, mediaFile: Media[])  : Promise<Messages>;
 
     // Reply to Message have Sender ID From Receiver Id
@@ -19,8 +19,8 @@ export interface MessagesRepositoryInterface {
 
     // Get Message By Its ID and Return the Message Message to the messageDto
     getMessageBySenderIdToReceiverId(id: number, senderId: number, receiverId: number, readAt: Date) : Promise<( Messages & { media: Media[] } | null)>;
-    getMessagesByReceiverId( senderId: number, receiverId: number, readAt: Date, offset: number) : Promise<(Messages[] & { media: Media[] } ) [] >;
-    getMessagesByRoomIdOrGroupChat(roomId: number, senderId: number, receiverIds: number[], readAt: Date, offset: number) : Promise<(Messages[] & { media: Media[] } ) []>;
+    getMessagesByReceiverId( senderId: number, receiverId: number, readAt: Date, offset: number) : Promise<(Messages & { media: Media[] } ) [] >;
+    getMessagesByRoomIdOrGroupChat(roomId: number, senderId: number, receiverIds: number[], readAt: Date, offset: number) : Promise<(Messages & { media: Media[] } ) []>;
 
     // Delete Or Remove Message By Its ID and return Boolean Message if Successfully removed
     deleteOrRemoveMessageToUserOrFriendByMessageId(messageId: number, senderId: number, receiverId: number, message: Messages, isHardDelete: boolean, deletedAt: Date, mediaFile: Media[]) : Promise<boolean>;
@@ -34,7 +34,7 @@ export interface MessagesRepositoryInterface {
 export interface MessageServicesInterface {
     // Send an Message Post to the Database and send back the Message Dto
     sendMessage( senderId: number, receiverId: number,  message: Messages, mediaFile: Media[]) : Promise<MessagesResponseDto>;
-    sendMultipleMessagesToAllFriends( senderId: number, receiverId: number[], message: Messages, mediaFile: Media[]) : Promise<MessagesResponseDto[]>;
+    sendMultipleMessagesToAllFriends( senderId: number, receiverId: number[], message: Messages, mediaFile: Media[]) : Promise<{sent: MessagesResponseDto[];blocked: number[];failed: number[];}>;
     sendMessageToRoom(roomId: number, senderId: number, message: Messages, mediaFile: Media[]) : Promise<MessagesResponseDto>;
 
     // Reply to Message have Sender ID From Receiver Id

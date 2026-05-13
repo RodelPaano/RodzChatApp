@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
-        "Dtos"
+        "blockeduserid",
+        "Dtos",
+        "mutualcount"
     ],
     "geminicodeassist.agentDebugMode": true,
     "geminicodeassist.chat.changeView": "Inline suggestions"

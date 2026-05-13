@@ -42,11 +42,11 @@ export default class Messages {
     this.message = message || "";
     this.media = media || [];
     this.createdAt = createdAt || new Date();
-    this.updatedAt = updatedAt || new Date();
-    this.deletedAt = deletedAt || new Date(0);
-    this.receivedAt = receivedAt || new Date(0);
-    this.readAt = readAt || new Date(0);
-    this.replyAt = replyAt || new Date(0);
+    this.updatedAt = updatedAt ?? undefined;
+    this.deletedAt = deletedAt ?? undefined;
+    this.receivedAt = receivedAt ?? undefined;
+    this.readAt = readAt ?? undefined;
+    this.replyAt = replyAt ?? undefined;
     this.replyToMessageId = replyToMessageId ?? null;
   }
 }
