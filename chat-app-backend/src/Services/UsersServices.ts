@@ -399,6 +399,71 @@ export default class UsersServices implements UsersServiceInterface {
         }
     }
 
+<<<<<<< HEAD
+=======
+    // ========================================================================= Block User Account Services and Process and Check the Business Logic =========================================================================  //
+    public async blockUserAccountById(id: number): Promise<UsersResponseDto | null> {
+        try {
+
+            validateVerifyAccountInput(id.toString(), "");
+            validateEmail("");
+            validatePasswordInput("");
+
+            const Block = await this.usersRepository.blockUserAccountById(id);
+            if(!Block) {
+                throw new Error("User Not Found");
+            }
+
+            if(Block.isBlocked) {
+                throw new Error("User Account is Already Blocked");
+            }
+
+            if(Block.isDeleted) {
+                throw new Error("User Account is Deleted");
+            }
+
+            const dtoUser = this.mapper.mapToDto(Block);
+
+            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(Block), {
+                EX: 3600 // Set the expiration time to 1 hour
+            });
+
+            return dtoUser;
+
+        } catch (error) {
+            console.error("Error Block User Account:", error);
+            throw error;
+        }
+    }
+
+    public async setBlockedUserAccountById(id: number, isBlocked: boolean): Promise<UsersResponseDto | null> {
+        try {
+            
+            const user = await this.usersRepository.setBlockedUserAccountById(id, isBlocked);
+            if(!user) {
+                throw new Error("User Not Found");
+            }
+            if(!user.isBlocked) {
+                throw new Error("User Account is Already Unblocked");
+            }
+            if(user.isDeleted) {
+                throw new Error("User Account is Deleted");
+            }
+
+            const dtoUser = this.mapper.mapToDto(user);
+
+            await this.redisClient.set(`user:${dtoUser.id}`, JSON.stringify(user), {
+                EX: 3600 // Set the expiration time to 1 hour
+            });
+
+            return dtoUser;
+
+        } catch (error) {
+            console.error("Error Set Blocked User Account:", error);
+            throw error;
+        }
+    }
+>>>>>>> main
 
     // ===================================================================== Get User Is Online Services and Process and Check the Business Logic ========================================================================= //
     public async getUserIsOnline(id: number, isOnline: boolean, isBlocked: boolean, isDeleted: boolean, lastLogin: Date): Promise<boolean> {
@@ -509,7 +574,7 @@ export default class UsersServices implements UsersServiceInterface {
 
             const hashedPassword = await hashPassword(newPassword);
 
-            const updatedUser = await this.usersRepository.updateUserEmailAndPasswordById(id, email, hashedPassword);
+            const updatedUser = await this.usersRepository.resetPassword(id, email, hashedPassword);
             if(!updatedUser) {
                 throw new Error("Failed to Update User Email and Password");
             }
@@ -540,7 +605,7 @@ export default class UsersServices implements UsersServiceInterface {
 
             const hashedPassword = await hashPassword(newPassword);
 
-            const updatedUser = await this.usersRepository.resetPassword(id, email, hashedPassword, token);
+            const updatedUser = await this.usersRepository.resetPassword(id, email, hashedPassword);
             if(!updatedUser) {
                 throw new Error("Failed to Reset Password");
             }
@@ -568,7 +633,7 @@ export default class UsersServices implements UsersServiceInterface {
 
             const hashedPassword = await hashPassword(password);
 
-            const user = await this.usersRepository.loginWithGoogleAccount(email, firstName, lastName, hashedPassword, googleId, googleToken);
+            const user = await this.usersRepository.loginWithGoogleAccount(email, firstName, lastName, hashedPassword, googleId);
             if(!user) {
                 throw new Error("Failed to Login With Google Account");
             }

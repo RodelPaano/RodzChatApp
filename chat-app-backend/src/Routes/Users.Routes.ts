@@ -1,8 +1,8 @@
 import { Router } from "express";
-import UsersControllers from "../src/Controllers/Users.Controllers";
-import UsersRepository from "../src/Repositories/UsersRepository";
-import UsersServices from "../src/Services/UsersServices";
-import UsersAutoMapper from "../src/AutoMapper/UsersAutoMapper";
+import UsersControllers from "../Controllers/Users.Controllers";
+import UsersRepository from "../Repositories/UsersRepository";
+import UsersServices from "../Services/UsersServices";
+import UsersAutoMapper from "../AutoMapper/UsersAutoMapper";
 
 const router = Router();
 
