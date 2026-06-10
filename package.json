@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "express": "^5.2.1",
+    "redoc": "^2.5.3",
+    "redoc-express": "^2.1.3"
+  }
+}
