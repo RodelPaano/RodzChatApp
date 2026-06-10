@@ -5,37 +5,37 @@ import Users, { UserRole } from "../Models/User";
 
 export default class UsersAutoMapper implements UsersAutoMapperInterface {
     mapToModel(input: CreateUserInput, hashedPassword: string) : Users {
-        return new Users (
-            0,
-            input.userName,
-            input.firstName,
-            input.middleName || "",
-            input.lastName,
-            input.email,
-            input.phoneNumber || "",
-            input.avatar || "",
-            hashedPassword, // hashed password must be provided by service
-            false,
-            false,
-            false,
-            input.role as unknown as UserRole,
-            input.address || "",
-            input.city || "",
-            input.state || "",
-            input.zipCode || "",
-            input.country || "",
-            false,
-            input.preferences?.statusMessage || "sent",
-            new Date(),
-            new Date(),
-            [],
-            [],
-            input.preferences || {},
-            new Date(),
-            new Date()
+        const user = Object.assign(Object.create(Users.prototype), {
+            id: 0,
+            userName: input.userName,
+            firstName: input.firstName,
+            middleName: input.middleName || "",
+            lastName: input.lastName,
+            email: input.email,
+            phoneNumber: input.phoneNumber || "",
+            avatar: input.avatar || "",
+            password: hashedPassword, // hashed password must be provided by service
+            isVerified: false,
+            isBlocked: false,
+            isDeleted: false,
+            role: input.role as unknown as UserRole,
+            address: input.address || "",
+            city: input.city || "",
+            state: input.state || "",
+            zipCode: input.zipCode || "",
+            country: input.country || "",
+            isOnline: false,
+            statusMessage: input.preferences?.statusMessage || "sent",
+            lastSeen: new Date(),
+            lastLogin: new Date(),
+            friends: [],
+            blockedUsers: [],
+            preferences: input.preferences || {},
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        }) as Users;
 
-
-        );
+        return user;
     }
 
     mapToDto(user: Users) : UsersResponseDto {
